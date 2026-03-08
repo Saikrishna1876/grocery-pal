@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 build/
+coverage/
 
 # Logs
 *.log
@@ -19,9 +20,26 @@ Thumbs.db
 *.swo
 
 # Environment
-# .env # Removed by Orchids to allow .env files
-# .env.local # Removed by Orchids to allow .env files
-# .env.*.local # Removed by Orchids to allow .env files
+.env
+.env.local
+.env.*.local
 
 # Orchids
 .orchids/
+
+# Expo
+.expo/
+web-build/
+.metro-health-check*
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# TypeScript
+*.tsbuildinfo
