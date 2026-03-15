@@ -3,6 +3,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { action } from './_generated/server';
+import { requireCurrentUser } from './auth';
 
 const scanType = v.string();
 
@@ -50,13 +51,14 @@ function buildPrompt(products: CatalogProduct[], type: string) {
   const productList = products
     .map((product) => `${product.name} (${product.category}, ${product.unit}, ₹${product.price})`)
     .join('\n');
+  const knownProducts = productList || 'No known products yet.';
 
   const baseInstructions =
     type === 'groceries'
       ? `You are analyzing a photo of physical grocery items. Identify each visible grocery item, estimate the quantity of each, and match them with known products.
 
 Known products database:
-${productList}
+${knownProducts}
 
 Instructions:
 - Identify each visible grocery item
@@ -68,7 +70,7 @@ Instructions:
       : `You are analyzing a grocery receipt or shopping list image. Extract all items with their names, quantities, and prices.
 
 Known products database:
-${productList}
+${knownProducts}
 
 Instructions:
 - Extract every item name from the image
@@ -151,12 +153,15 @@ export const processImage = action({
     type: scanType,
   },
   handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
     const trimmed = args.image.replace(/^data:image\/\w+;base64,/, '').trim();
     if (!trimmed) {
       throw new ConvexError('No image provided.');
     }
 
-    const products = (await ctx.runQuery(internal.products.catalog, {})) as CatalogProduct[];
+    const products = (await ctx.runQuery(internal.products.catalog, {
+      userId: user._id,
+    })) as CatalogProduct[];
     const prompt = buildPrompt(products, args.type);
     const responseText = await callGemini(getGeminiKey(), prompt, trimmed);
     const parsed = extractJson(responseText);

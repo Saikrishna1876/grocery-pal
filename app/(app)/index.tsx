@@ -1,4 +1,5 @@
 import { api } from '@/convex/_generated/api';
+import { signOut } from '@/lib/auth/client';
 import { MONTH_NAMES } from '@/lib/months';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
@@ -6,6 +7,7 @@ import {
   CalendarDays,
   ChevronRight,
   IndianRupee,
+  LogOut,
   Plus,
   ShoppingCart,
   TrendingDown,
@@ -28,6 +30,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const [signingOut, setSigningOut] = React.useState(false);
   const monthsResult = useQuery(api.months.get);
   const createMonth = useMutation(api.months.add);
 
@@ -54,11 +57,37 @@ export default function Dashboard() {
   const greenColor = '#22c55e';
   const redColor = '#ef4444';
 
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   return (
     <View className="flex-1 bg-background">
       <View className="border-b border-border px-5 pb-4 pt-14">
-        <Text className="text-2xl font-bold text-foreground">Ration Tracker</Text>
-        <Text className="mt-1 text-sm text-muted-foreground">Monthly Grocery Expense Manager</Text>
+        <View className="flex-row items-start justify-between gap-4">
+          <View className="flex-1">
+            <Text className="text-2xl font-bold text-foreground">Ration Tracker</Text>
+            <Text className="mt-1 text-sm text-muted-foreground">
+              Monthly Grocery Expense Manager
+            </Text>
+          </View>
+          <TouchableOpacity
+            disabled={signingOut}
+            onPress={handleSignOut}
+            className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2">
+            <LogOut size={16} color={iconColor} />
+            <Text className="text-xs font-medium text-foreground">
+              {signingOut ? 'Signing out...' : 'Sign Out'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>

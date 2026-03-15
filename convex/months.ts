@@ -1,12 +1,14 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
+import { requireCurrentUser } from './auth';
 import { getMonthSummaries } from './domain';
 
 export const get = query({
   args: {},
   handler: async (ctx) => {
-    return getMonthSummaries(ctx);
+    const user = await requireCurrentUser(ctx);
+    return getMonthSummaries(ctx, user._id);
   },
 });
 
@@ -16,9 +18,12 @@ export const add = mutation({
     month: v.number(),
   },
   handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
     const existing = await ctx.db
       .query('months')
-      .withIndex('by_year_month', (q) => q.eq('year', args.year).eq('month', args.month))
+      .withIndex('by_user_year_month', (q) =>
+        q.eq('userId', user._id).eq('year', args.year).eq('month', args.month)
+      )
       .unique();
 
     if (existing) {
@@ -26,6 +31,7 @@ export const add = mutation({
     }
 
     const monthId = await ctx.db.insert('months', {
+      userId: user._id,
       year: args.year,
       month: args.month,
     });

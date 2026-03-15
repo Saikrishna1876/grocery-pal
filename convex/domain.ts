@@ -1,4 +1,7 @@
+import { ConvexError } from 'convex/values';
 import type { Doc, Id } from './_generated/dataModel';
+
+type UserId = string;
 
 type OrderWithItems = Doc<'orders'> & {
   id: Id<'orders'>;
@@ -14,10 +17,14 @@ type ItemAggregate = {
   count: number;
 };
 
-export async function listOrdersWithItemsForMonth(ctx: any, monthId: Id<'months'>) {
+export async function listOrdersWithItemsForMonth(
+  ctx: any,
+  userId: UserId,
+  monthId: Id<'months'>
+) {
   const orders = await ctx.db
     .query('orders')
-    .withIndex('by_month_id', (q: any) => q.eq('month_id', monthId))
+    .withIndex('by_user_month_id', (q: any) => q.eq('userId', userId).eq('month_id', monthId))
     .order('desc')
     .collect();
 
@@ -39,9 +46,17 @@ export async function listOrdersWithItemsForMonth(ctx: any, monthId: Id<'months'
   return orderList;
 }
 
-export async function getMonthAnalytics(ctx: any, monthId: Id<'months'>) {
-  const orders = await listOrdersWithItemsForMonth(ctx, monthId);
-  const products = await ctx.db.query('products').collect();
+export async function getMonthAnalytics(ctx: any, userId: UserId, monthId: Id<'months'>) {
+  const month = await ctx.db.get(monthId);
+  if (!month || month.userId !== userId) {
+    throw new ConvexError('Month not found.');
+  }
+
+  const orders = await listOrdersWithItemsForMonth(ctx, userId, monthId);
+  const products = await ctx.db
+    .query('products')
+    .withIndex('by_user_name', (q: any) => q.eq('userId', userId))
+    .collect();
   const productsById = new Map<string, Doc<'products'>>(
     products.map((product: Doc<'products'>) => [product._id, product])
   );
@@ -91,12 +106,16 @@ export async function getMonthAnalytics(ctx: any, monthId: Id<'months'>) {
   };
 }
 
-export async function getMonthSummaries(ctx: any) {
-  const months = await ctx.db.query('months').withIndex('by_year_month').order('desc').collect();
+export async function getMonthSummaries(ctx: any, userId: UserId) {
+  const months = await ctx.db
+    .query('months')
+    .withIndex('by_user_year_month', (q: any) => q.eq('userId', userId))
+    .order('desc')
+    .collect();
 
   return Promise.all(
     months.map(async (month: Doc<'months'>) => {
-      const analytics = await getMonthAnalytics(ctx, month._id);
+      const analytics = await getMonthAnalytics(ctx, userId, month._id);
       return {
         ...month,
         id: month._id,

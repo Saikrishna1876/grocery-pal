@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 
 import { query } from './_generated/server';
+import { requireCurrentUser } from './auth';
 import { getMonthAnalytics, getMonthSummaries } from './domain';
 
 export const getByMonth = query({
@@ -8,14 +9,16 @@ export const getByMonth = query({
     monthId: v.id('months'),
   },
   handler: async (ctx, args) => {
-    return getMonthAnalytics(ctx, args.monthId);
+    const user = await requireCurrentUser(ctx);
+    return getMonthAnalytics(ctx, user._id, args.monthId);
   },
 });
 
 export const getComparison = query({
   args: {},
   handler: async (ctx) => {
-    const months = await getMonthSummaries(ctx);
+    const user = await requireCurrentUser(ctx);
+    const months = await getMonthSummaries(ctx, user._id);
     return months.slice(0, 6).map((month) => ({
       year: month.year,
       month: month.month,
