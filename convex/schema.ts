@@ -7,12 +7,15 @@ export default defineSchema({
   ...authTables,
   products: defineTable({
     userId: v.optional(v.string()),
+    sourceProductId: v.optional(v.id('products')),
     name: v.string(),
     category: v.string(),
     unit: v.string(),
     price: v.number(),
     updated_at: v.optional(v.string()),
-  }).index('by_user_name', ['userId', 'name']),
+  })
+    .index('by_user_name', ['userId', 'name'])
+    .index('by_user_source_product', ['userId', 'sourceProductId']),
   months: defineTable({
     userId: v.optional(v.string()),
     year: v.number(),

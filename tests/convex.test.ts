@@ -102,7 +102,7 @@ describe('Convex backend auth + ownership', () => {
     expect(authUser.email).toBe('auth-user@example.com');
     expect(authUser._id).toBe(createdUser.userId);
     await expect(t.query(api.months.get, {})).rejects.toThrow('Unauthenticated');
-  });
+  }, 10000);
 
   test('months dedupe within one user and two users can create the same calendar month independently', async () => {
     const t = createBackend();
@@ -122,7 +122,69 @@ describe('Convex backend auth + ownership', () => {
     expect(monthsB).toHaveLength(1);
   });
 
-  test('orders.add auto-creates products, updates owned products, and rejects foreign product references', async () => {
+  test('shared default products are visible to everyone and direct edits fork once per user', async () => {
+    const t = createBackend();
+    const userA = await createAuthenticatedUser(t, 'shared-a@example.com', 'Shared A');
+    const userB = await createAuthenticatedUser(t, 'shared-b@example.com', 'Shared B');
+
+    const sharedProductId = await t.run(async (ctx) =>
+      ctx.db.insert('products', {
+        name: 'Milk',
+        category: 'Dairy',
+        unit: 'ltr',
+        price: 60,
+      })
+    );
+
+    const initialProductsA = await userA.auth.query(api.products.get, {});
+    const initialProductsB = await userB.auth.query(api.products.get, {});
+
+    expect(initialProductsA).toHaveLength(1);
+    expect(initialProductsA[0]?.price).toBe(60);
+    expect(initialProductsA[0]?.userId).toBeUndefined();
+    expect(initialProductsB).toHaveLength(1);
+    expect(initialProductsB[0]?._id).toBe(sharedProductId);
+
+    const firstOverride = await userA.auth.mutation(api.products.update, {
+      id: sharedProductId,
+      price: 65,
+    });
+    const secondOverride = await userA.auth.mutation(api.products.update, {
+      id: sharedProductId,
+      price: 70,
+    });
+
+    const productsA = await userA.auth.query(api.products.get, {});
+    const productsB = await userB.auth.query(api.products.get, {});
+    const allMilkProducts = await t.run(async (ctx) =>
+      ctx.db
+        .query('products')
+        .withIndex('by_user_name', (q) => q.eq('userId', undefined).eq('name', 'Milk'))
+        .collect()
+    );
+    const ownedMilkProducts = await t.run(async (ctx) =>
+      ctx.db
+        .query('products')
+        .withIndex('by_user_name', (q) => q.eq('userId', userA.userId).eq('name', 'Milk'))
+        .collect()
+    );
+
+    expect(firstOverride?.userId).toBe(userA.userId);
+    expect(firstOverride?.price).toBe(65);
+    expect((firstOverride as any)?.sourceProductId).toBe(sharedProductId);
+    expect(secondOverride?._id).toBe(firstOverride?._id);
+    expect(secondOverride?.price).toBe(70);
+    expect(productsA).toHaveLength(1);
+    expect(productsA[0]?._id).toBe(firstOverride?._id);
+    expect(productsA[0]?.price).toBe(70);
+    expect(productsB).toHaveLength(1);
+    expect(productsB[0]?._id).toBe(sharedProductId);
+    expect(productsB[0]?.price).toBe(60);
+    expect(allMilkProducts).toHaveLength(1);
+    expect(ownedMilkProducts).toHaveLength(1);
+  });
+
+  test('orders.add auto-creates products, updates owned products, uses shared defaults, and rejects foreign product references', async () => {
     const t = createBackend();
     const userA = await createAuthenticatedUser(t, 'order-a@example.com', 'Order A');
     const userB = await createAuthenticatedUser(t, 'order-b@example.com', 'Order B');
@@ -141,6 +203,14 @@ describe('Convex backend auth + ownership', () => {
       unit: 'kg',
       price: 90,
     });
+    const sharedSugarId = await t.run(async (ctx) =>
+      ctx.db.insert('products', {
+        name: 'Sugar',
+        category: 'Essentials',
+        unit: 'kg',
+        price: 42,
+      })
+    );
 
     await expect(
       userB.auth.mutation(api.orders.add, {
@@ -177,17 +247,54 @@ describe('Convex backend auth + ownership', () => {
           unit: 'ltr',
           price: 140,
         },
+        {
+          product_id: sharedSugarId,
+          name: 'Sugar',
+          quantity: 1,
+          unit: 'kg',
+          price: 42,
+        },
+      ],
+    });
+
+    await userA.auth.mutation(api.orders.add, {
+      month_id: monthA!._id,
+      source: 'manual',
+      notes: '',
+      items: [
+        {
+          product_id: sharedSugarId,
+          name: 'Sugar',
+          quantity: 1,
+          unit: 'kg',
+          price: 48,
+        },
       ],
     });
 
     const productsA = await userA.auth.query(api.products.get, {});
     const productsB = await userB.auth.query(api.products.get, {});
+    const orderItemsA = await t.run(async (ctx) => ctx.db.query('order_items').collect());
+    const sugarItems = orderItemsA.filter((item) => item.name === 'Sugar');
+    const allUserSugarProducts = await t.run(async (ctx) =>
+      ctx.db
+        .query('products')
+        .withIndex('by_user_name', (q) => q.eq('userId', userA.userId).eq('name', 'Sugar'))
+        .collect()
+    );
 
-    expect(productsA).toHaveLength(2);
+    expect(productsA).toHaveLength(3);
     expect(productsA.find((product) => product.name === 'Rice')?.price).toBe(55);
     expect(productsA.find((product) => product.name === 'Oil')?.userId).toBe(userA.userId);
-    expect(productsB).toHaveLength(1);
-    expect(productsB[0]?.price).toBe(productB?.price);
+    expect(productsA.find((product) => product.name === 'Sugar')?.price).toBe(48);
+    expect(productsB).toHaveLength(2);
+    expect(productsB.find((product) => product.name === 'Rice')?.price).toBe(productB?.price);
+    expect(productsB.find((product) => product.name === 'Sugar')?._id).toBe(sharedSugarId);
+    expect(sugarItems).toHaveLength(2);
+    expect(sugarItems[0]?.product_id).toBe(sharedSugarId);
+    expect(sugarItems[1]?.product_id).toBe(allUserSugarProducts[0]?._id);
+    expect(allUserSugarProducts).toHaveLength(1);
+    expect((allUserSugarProducts[0] as any)?.sourceProductId).toBe(sharedSugarId);
   });
 
   test('analytics and month detail queries are scoped to the signed-in user', async () => {
@@ -226,9 +333,9 @@ describe('Convex backend auth + ownership', () => {
     expect(comparisonA).toHaveLength(2);
     expect(comparisonA.every((month) => month.total !== 60)).toBe(true);
 
-    await expect(
-      userA.auth.query(api.orders.getByMonth, { monthId: monthB!._id })
-    ).rejects.toThrow('Month not found.');
+    await expect(userA.auth.query(api.orders.getByMonth, { monthId: monthB!._id })).rejects.toThrow(
+      'Month not found.'
+    );
     await expect(
       userA.auth.query(api.analytics.getByMonth, { monthId: monthB!._id })
     ).rejects.toThrow('Month not found.');
@@ -262,7 +369,7 @@ describe('Convex backend auth + ownership', () => {
     expect(orderItems).toHaveLength(0);
   });
 
-  test('legacy ownerless rows stay hidden and the cleanup mutation purges them safely', async () => {
+  test('cleanup removes ownerless months and orders without deleting shared products', async () => {
     const t = createBackend();
     const user = await createAuthenticatedUser(t, 'legacy@example.com', 'Legacy User');
     const month = await user.auth.mutation(api.months.add, { year: 2026, month: 4 });
@@ -290,10 +397,15 @@ describe('Convex backend auth + ownership', () => {
     });
 
     const monthsBeforeCleanup = await user.auth.query(api.months.get, {});
-    const ordersBeforeCleanup = await user.auth.query(api.orders.getByMonth, { monthId: month!._id });
+    const ordersBeforeCleanup = await user.auth.query(api.orders.getByMonth, {
+      monthId: month!._id,
+    });
+    const productsBeforeCleanup = await user.auth.query(api.products.get, {});
 
     expect(monthsBeforeCleanup).toHaveLength(1);
     expect(ordersBeforeCleanup).toHaveLength(0);
+    expect(productsBeforeCleanup).toHaveLength(1);
+    expect(productsBeforeCleanup[0]?.name).toBe('Legacy Product');
 
     const cleanupResult = await t.mutation(internal.auth.cleanupLegacyOwnerlessData, {});
 
@@ -305,11 +417,11 @@ describe('Convex backend auth + ownership', () => {
     expect(cleanupResult.monthsDeleted).toBe(1);
     expect(cleanupResult.ordersDeleted).toBe(1);
     expect(cleanupResult.orderItemsDeleted).toBe(1);
-    expect(cleanupResult.productsDeleted).toBe(1);
+    expect(cleanupResult.productsDeleted).toBe(0);
     expect(monthsAfterCleanup).toHaveLength(1);
     expect(ordersAfterCleanup).toHaveLength(0);
     expect(itemsAfterCleanup).toHaveLength(0);
-    expect(productsAfterCleanup).toHaveLength(0);
+    expect(productsAfterCleanup).toHaveLength(1);
   });
 
   test('scan.processImage still fails fast when the Gemini key is missing for an authenticated user', async () => {

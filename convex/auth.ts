@@ -69,10 +69,6 @@ export const cleanupLegacyOwnerlessData = internalMutation({
     const ownerlessOrders = (await ctx.db.query('orders').collect()).filter(
       (order) => !order.userId
     );
-    const ownerlessProducts = (await ctx.db.query('products').collect()).filter(
-      (product) => !product.userId
-    );
-
     let deletedOrderItems = 0;
     for (const order of ownerlessOrders) {
       const items = await ctx.db
@@ -91,16 +87,11 @@ export const cleanupLegacyOwnerlessData = internalMutation({
     for (const month of ownerlessMonths) {
       await ctx.db.delete(month._id);
     }
-
-    for (const product of ownerlessProducts) {
-      await ctx.db.delete(product._id);
-    }
-
     return {
       monthsDeleted: ownerlessMonths.length,
       ordersDeleted: ownerlessOrders.length,
       orderItemsDeleted: deletedOrderItems,
-      productsDeleted: ownerlessProducts.length,
+      productsDeleted: 0,
     };
   },
 });

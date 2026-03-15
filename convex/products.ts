@@ -3,36 +3,19 @@ import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { internalQuery, mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
-
-function sortProducts<T extends { category: string; name: string }>(products: T[]) {
-  return products.sort((a, b) => {
-    const categoryCompare = a.category.localeCompare(b.category);
-    if (categoryCompare !== 0) {
-      return categoryCompare;
-    }
-
-    return a.name.localeCompare(b.name);
-  });
-}
-
-async function getOwnedProduct(ctx: any, userId: string, productId: Id<'products'>) {
-  const product = await ctx.db.get(productId);
-  if (!product || product.userId !== userId) {
-    throw new ConvexError('Product not found.');
-  }
-
-  return product;
-}
+import {
+  getAccessibleProduct,
+  getUserOverrideForSource,
+  listCatalogProducts,
+  sameProductValues,
+  upsertProductOverride,
+} from './productCatalog';
 
 export const get = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireCurrentUser(ctx);
-    const products = await ctx.db
-      .query('products')
-      .withIndex('by_user_name', (q) => q.eq('userId', user._id))
-      .collect();
-    return sortProducts(products);
+    return listCatalogProducts(ctx, user._id);
   },
 });
 
@@ -73,18 +56,32 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    const existing = await getOwnedProduct(ctx, user._id, args.id);
+    const existing = await getAccessibleProduct(ctx, user._id, args.id);
+    const baseProduct =
+      existing.userId === user._id
+        ? existing
+        : ((await getUserOverrideForSource(ctx, user._id, existing._id)) ?? existing);
+    const nextValues = {
+      name: args.name?.trim() ?? baseProduct.name,
+      category: args.category?.trim() ?? baseProduct.category,
+      unit: args.unit?.trim() ?? baseProduct.unit,
+      price: args.price ?? baseProduct.price,
+    };
 
-    const name = args.name?.trim() ?? existing.name;
-    await ctx.db.patch(args.id, {
-      name,
-      category: args.category?.trim() ?? existing.category,
-      unit: args.unit?.trim() ?? existing.unit,
-      price: args.price ?? existing.price,
-      updated_at: new Date().toISOString(),
-    });
+    if (sameProductValues(baseProduct, nextValues)) {
+      return baseProduct;
+    }
 
-    return ctx.db.get(args.id);
+    if (existing.userId === user._id) {
+      await ctx.db.patch(existing._id, {
+        ...nextValues,
+        updated_at: new Date().toISOString(),
+      });
+
+      return ctx.db.get(existing._id);
+    }
+
+    return upsertProductOverride(ctx, user._id, existing, nextValues);
   },
 });
 
@@ -93,11 +90,6 @@ export const catalog = internalQuery({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    return sortProducts(
-      await ctx.db
-        .query('products')
-        .withIndex('by_user_name', (q) => q.eq('userId', args.userId))
-        .collect()
-    );
+    return listCatalogProducts(ctx, args.userId);
   },
 });

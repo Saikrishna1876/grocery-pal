@@ -1,6 +1,8 @@
 import { ConvexError } from 'convex/values';
 import type { Doc, Id } from './_generated/dataModel';
 
+import { listAccessibleProducts } from './productCatalog';
+
 type UserId = string;
 
 type OrderWithItems = Doc<'orders'> & {
@@ -17,11 +19,7 @@ type ItemAggregate = {
   count: number;
 };
 
-export async function listOrdersWithItemsForMonth(
-  ctx: any,
-  userId: UserId,
-  monthId: Id<'months'>
-) {
+export async function listOrdersWithItemsForMonth(ctx: any, userId: UserId, monthId: Id<'months'>) {
   const orders = await ctx.db
     .query('orders')
     .withIndex('by_user_month_id', (q: any) => q.eq('userId', userId).eq('month_id', monthId))
@@ -53,10 +51,7 @@ export async function getMonthAnalytics(ctx: any, userId: UserId, monthId: Id<'m
   }
 
   const orders = await listOrdersWithItemsForMonth(ctx, userId, monthId);
-  const products = await ctx.db
-    .query('products')
-    .withIndex('by_user_name', (q: any) => q.eq('userId', userId))
-    .collect();
+  const products = await listAccessibleProducts(ctx, userId);
   const productsById = new Map<string, Doc<'products'>>(
     products.map((product: Doc<'products'>) => [product._id, product])
   );

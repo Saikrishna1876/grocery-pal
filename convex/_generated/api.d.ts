@@ -16,6 +16,7 @@ import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
 import type * as months from "../months.js";
 import type * as orders from "../orders.js";
+import type * as productCatalog from "../productCatalog.js";
 import type * as products from "../products.js";
 import type * as scan from "../scan.js";
 
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   months: typeof months;
   orders: typeof orders;
+  productCatalog: typeof productCatalog;
   products: typeof products;
   scan: typeof scan;
 }>;

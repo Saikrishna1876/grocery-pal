@@ -4,6 +4,13 @@ import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { listOrdersWithItemsForMonth } from './domain';
+import {
+  findLatestUserProductByName,
+  findSharedProductByName,
+  getAccessibleProduct,
+  getUserOverrideForSource,
+  upsertProductOverride,
+} from './productCatalog';
 
 const orderItemInput = v.object({
   product_id: v.optional(v.id('products')),
@@ -22,15 +29,6 @@ async function getOwnedMonth(ctx: any, userId: string, monthId: Id<'months'>) {
   return month;
 }
 
-async function getOwnedProduct(ctx: any, userId: string, productId: Id<'products'>) {
-  const product = await ctx.db.get(productId);
-  if (!product || product.userId !== userId) {
-    throw new ConvexError('Product not found.');
-  }
-
-  return product;
-}
-
 async function upsertUserProduct(
   ctx: any,
   userId: string,
@@ -44,10 +42,7 @@ async function upsertUserProduct(
   const name = item.name.trim();
   const unit = item.unit.trim() || 'unit';
 
-  const existing = await ctx.db
-    .query('products')
-    .withIndex('by_user_name', (q: any) => q.eq('userId', userId).eq('name', name))
-    .unique();
+  const existing = await findLatestUserProductByName(ctx, userId, name);
 
   if (existing) {
     await ctx.db.patch(existing._id, {
@@ -56,6 +51,20 @@ async function upsertUserProduct(
       updated_at: now,
     });
     return (await ctx.db.get(existing._id)) ?? existing;
+  }
+
+  const sharedProduct = await findSharedProductByName(ctx, name);
+  if (sharedProduct) {
+    if (sharedProduct.price === item.price) {
+      return sharedProduct;
+    }
+
+    return upsertProductOverride(ctx, userId, sharedProduct, {
+      name: sharedProduct.name,
+      category: sharedProduct.category,
+      unit: sharedProduct.unit,
+      price: item.price,
+    });
   }
 
   const productId = await ctx.db.insert('products', {
@@ -68,6 +77,50 @@ async function upsertUserProduct(
   });
 
   return ctx.db.get(productId);
+}
+
+async function resolveProductForOrder(
+  ctx: any,
+  userId: string,
+  item: {
+    product_id?: Id<'products'>;
+    name: string;
+    unit: string;
+    price: number;
+  }
+) {
+  if (!item.product_id) {
+    return upsertUserProduct(ctx, userId, item);
+  }
+
+  const product = await getAccessibleProduct(ctx, userId, item.product_id);
+  const now = new Date().toISOString();
+
+  if (product.userId === userId) {
+    if (product.price !== item.price) {
+      await ctx.db.patch(product._id, {
+        price: item.price,
+        updated_at: now,
+      });
+      return (await ctx.db.get(product._id)) ?? product;
+    }
+
+    return product;
+  }
+
+  const existingOverride = await getUserOverrideForSource(ctx, userId, product._id);
+  const baseProduct = existingOverride ?? product;
+
+  if (baseProduct.price === item.price) {
+    return baseProduct;
+  }
+
+  return upsertProductOverride(ctx, userId, product, {
+    name: baseProduct.name,
+    category: baseProduct.category,
+    unit: baseProduct.unit,
+    price: item.price,
+  });
 }
 
 export const getByMonth = query({
@@ -103,7 +156,6 @@ export const add = mutation({
       notes: args.notes?.trim() || undefined,
     });
 
-    const now = new Date().toISOString();
     for (const item of args.items) {
       const name = item.name.trim();
       if (!name) {
@@ -111,27 +163,16 @@ export const add = mutation({
       }
 
       const unit = item.unit.trim() || 'unit';
-      let productId: Id<'products'> | undefined;
-
-      if (item.product_id) {
-        const product = await getOwnedProduct(ctx, user._id, item.product_id);
-        productId = product._id;
-        await ctx.db.patch(product._id, {
-          price: item.price,
-          updated_at: now,
-        });
-      } else {
-        const product = await upsertUserProduct(ctx, user._id, {
-          name,
-          unit,
-          price: item.price,
-        });
-        productId = product?._id;
-      }
+      const product = await resolveProductForOrder(ctx, user._id, {
+        product_id: item.product_id,
+        name,
+        unit,
+        price: item.price,
+      });
 
       await ctx.db.insert('order_items', {
         order_id: orderId,
-        product_id: productId,
+        product_id: product?._id,
         name,
         quantity: item.quantity,
         unit,
