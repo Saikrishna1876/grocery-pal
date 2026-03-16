@@ -31,4 +31,4 @@ test("hello world", () => {
 
 ## Review
 
-- Always run `cr --plain` to review your uncommited changes.
+- Always run `cr --plain` to review the changes you make.

@@ -4,6 +4,7 @@ import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { listOrdersWithItemsForMonth } from './domain';
+import { ensureDefaultOrderCategories, getUncategorizedCategory } from './orderCategories';
 import {
   findLatestUserProductByName,
   findSharedProductByName,
@@ -139,14 +140,24 @@ export const add = mutation({
     month_id: v.id('months'),
     source: v.optional(v.string()),
     notes: v.optional(v.string()),
+    category_id: v.optional(v.id('order_categories')),
     items: v.array(orderItemInput),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
     await getOwnedMonth(ctx, user._id, args.month_id);
+    const categories = await ensureDefaultOrderCategories(ctx, user._id);
 
     if (args.items.length === 0) {
       throw new ConvexError('At least one item is required.');
+    }
+
+    const category = args.category_id
+      ? categories.find((item) => item._id === args.category_id)
+      : await getUncategorizedCategory(ctx, user._id);
+
+    if (!category) {
+      throw new ConvexError('Order category not found.');
     }
 
     const orderId = await ctx.db.insert('orders', {
@@ -154,6 +165,8 @@ export const add = mutation({
       month_id: args.month_id,
       source: args.source || 'manual',
       notes: args.notes?.trim() || undefined,
+      category_id: category._id,
+      category_name: category.name,
     });
 
     for (const item of args.items) {

@@ -9,6 +9,7 @@ import {
   Package,
   Plus,
   ShoppingCart,
+  Tag,
   Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -19,6 +20,7 @@ type Order = {
   _id: Id<'orders'>;
   source?: string;
   notes?: string;
+  category_name?: string;
   _creationTime: number;
   items: {
     _id: string;
@@ -34,7 +36,8 @@ type AnalyticsData = {
   total: number;
   order_count: number;
   top_items: { name: string; quantity: number; total: number }[];
-  by_category: { category: string; amount: number }[];
+  by_item_category: { category: string; amount: number }[];
+  by_order_category: { category: string; amount: number }[];
 };
 
 export default function MonthDetail() {
@@ -124,10 +127,39 @@ export default function MonthDetail() {
               </View>
             )}
 
-            {analytics && analytics.by_category.length > 0 && (
+            {analytics && analytics.by_order_category.length > 0 && (
               <View className="mb-5 rounded-xl border border-border bg-card p-4">
-                <Text className="mb-3 text-sm font-semibold text-foreground">By Category</Text>
-                {analytics.by_category.map((category, index) => {
+                <Text className="mb-3 text-sm font-semibold text-foreground">
+                  By Order Category
+                </Text>
+                {analytics.by_order_category.map((category, index) => {
+                  const pct = analytics.total > 0 ? (category.amount / analytics.total) * 100 : 0;
+                  return (
+                    <View key={`${category.category}-${index}`} className="mb-2">
+                      <View className="flex-row items-center justify-between">
+                        <Text className="text-sm text-foreground">{category.category}</Text>
+                        <Text className="text-sm text-muted-foreground">
+                          ₹{category.amount.toFixed(0)} ({pct.toFixed(0)}%)
+                        </Text>
+                      </View>
+                      <View className="mt-1 h-2 overflow-hidden rounded-full bg-secondary">
+                        <View
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {analytics && analytics.by_item_category.length > 0 && (
+              <View className="mb-5 rounded-xl border border-border bg-card p-4">
+                <Text className="mb-3 text-sm font-semibold text-foreground">
+                  By Product Category
+                </Text>
+                {analytics.by_item_category.map((category, index) => {
                   const pct = analytics.total > 0 ? (category.amount / analytics.total) * 100 : 0;
                   return (
                     <View key={`${category.category}-${index}`} className="mb-2">
@@ -191,6 +223,14 @@ export default function MonthDetail() {
                         <Text className="text-base font-semibold text-foreground">
                           ₹{order.total.toFixed(0)}
                         </Text>
+                        <View className="rounded-full bg-primary/10 px-2 py-0.5">
+                          <View className="flex-row items-center gap-1">
+                            <Tag size={10} color={iconColor} />
+                            <Text className="text-xs text-foreground">
+                              {order.category_name || 'Uncategorized'}
+                            </Text>
+                          </View>
+                        </View>
                         <View className="rounded-full bg-secondary px-2 py-0.5">
                           <Text className="text-xs text-muted-foreground">{order.source}</Text>
                         </View>

@@ -5,6 +5,14 @@ import { tables as authTables } from './betterAuth/schema';
 
 export default defineSchema({
   ...authTables,
+  order_categories: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    normalizedName: v.string(),
+    systemKey: v.optional(v.string()),
+  })
+    .index('by_user_normalized_name', ['userId', 'normalizedName'])
+    .index('by_user_system_key', ['userId', 'systemKey']),
   products: defineTable({
     userId: v.optional(v.string()),
     sourceProductId: v.optional(v.id('products')),
@@ -26,7 +34,11 @@ export default defineSchema({
     month_id: v.id('months'),
     source: v.optional(v.string()),
     notes: v.optional(v.string()),
-  }).index('by_user_month_id', ['userId', 'month_id']),
+    category_id: v.optional(v.id('order_categories')),
+    category_name: v.optional(v.string()),
+  })
+    .index('by_user_month_id', ['userId', 'month_id'])
+    .index('by_user_category_id', ['userId', 'category_id']),
   order_items: defineTable({
     order_id: v.id('orders'),
     product_id: v.optional(v.id('products')),

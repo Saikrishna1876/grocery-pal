@@ -27,6 +27,29 @@ export const importProducts = mutation({
   },
 });
 
+export const importOrderCategories = mutation({
+  args: {
+    categories: v.array(
+      v.object({
+        userId: v.string(),
+        name: v.string(),
+        normalizedName: v.string(),
+        systemKey: v.optional(v.string()),
+        originalId: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const idMapping: Record<string, string> = {};
+    for (const category of args.categories) {
+      const { originalId, ...data } = category;
+      const newId = await ctx.db.insert('order_categories', data);
+      idMapping[originalId] = newId;
+    }
+    return idMapping;
+  },
+});
+
 export const importMonths = mutation({
   args: {
     months: v.array(
@@ -57,6 +80,8 @@ export const importOrders = mutation({
         month_id: v.id('months'),
         source: v.optional(v.string()),
         notes: v.optional(v.string()),
+        category_id: v.optional(v.id('order_categories')),
+        category_name: v.optional(v.string()),
         originalId: v.string(),
       })
     ),

@@ -15,6 +15,7 @@ import type * as domain from "../domain.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
 import type * as months from "../months.js";
+import type * as orderCategories from "../orderCategories.js";
 import type * as orders from "../orders.js";
 import type * as productCatalog from "../productCatalog.js";
 import type * as products from "../products.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   migrations: typeof migrations;
   months: typeof months;
+  orderCategories: typeof orderCategories;
   orders: typeof orders;
   productCatalog: typeof productCatalog;
   products: typeof products;
