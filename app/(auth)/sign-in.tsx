@@ -91,7 +91,7 @@ export default function SignInScreen() {
         <ScrollView
           className="flex-1"
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
-          <Text className="text-2xl font-bold text-foreground">Ration Tracker</Text>
+          <Text className="text-2xl font-bold text-foreground">Grocery Pal</Text>
           <Text className="mt-2 text-sm text-muted-foreground">
             Sign in to access your private months, orders, analytics, and product catalog.
           </Text>

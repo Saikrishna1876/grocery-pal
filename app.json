@@ -19,7 +19,7 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "package": "com.saikrishna1876.expensetrackingapp",
+      "package": "com.saikrishna1876.grocerypal",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

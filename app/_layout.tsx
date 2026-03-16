@@ -47,7 +47,7 @@ function LoadingScreen() {
 
   return (
     <View className="flex-1 items-center justify-center bg-background px-6">
-      <Text className="text-lg font-semibold text-foreground">Ration Tracker</Text>
+      <Text className="text-lg font-semibold text-foreground">Grocery Pal</Text>
       <Text
         className="mt-2 text-center text-sm text-muted-foreground"
         style={{ color: isDark ? '#a3a3a3' : '#737373' }}>

@@ -20,7 +20,7 @@ export const authClient = createAuthClient({
     expoClient({
       scheme: 'app',
       storage: SecureStore,
-      storagePrefix: 'expense-tracking-app',
+      storagePrefix: 'grocery-pal',
     }),
     convexClient(),
   ],

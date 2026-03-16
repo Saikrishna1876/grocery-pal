@@ -1,4 +1,4 @@
-# expense-tracking-app
+# grocery-pal
 
 To install dependencies:
 
