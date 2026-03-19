@@ -52,7 +52,7 @@ declare const fullApi: ApiFromModules<{
  */
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "public">
+  FunctionReference<"query" | "mutation" | "action", "public">
 >;
 
 /**
@@ -65,7 +65,7 @@ export declare const api: FilterApi<
  */
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "internal">
+  FunctionReference<"query" | "mutation" | "action", "internal">
 >;
 
 export declare const components: {
@@ -212,7 +212,7 @@ export declare const components: {
           onCreateHandle?: string;
           select?: Array<string>;
         },
-        any
+        unknown
       >;
       deleteMany: FunctionReference<
         "mutation",
@@ -596,7 +596,7 @@ export declare const components: {
             numItems: number;
           };
         },
-        any
+        unknown
       >;
       deleteOne: FunctionReference<
         "mutation",
@@ -972,13 +972,13 @@ export declare const components: {
               };
           onDeleteHandle?: string;
         },
-        any
+        unknown
       >;
       findMany: FunctionReference<
         "query",
         "internal",
         {
-          join?: any;
+          join?: unknown;
           limit?: number;
           model:
             | "user"
@@ -1026,13 +1026,13 @@ export declare const components: {
               | null;
           }>;
         },
-        any
+        unknown
       >;
       findOne: FunctionReference<
         "query",
         "internal",
         {
-          join?: any;
+          join?: unknown;
           model:
             | "user"
             | "session"
@@ -1070,7 +1070,7 @@ export declare const components: {
               | null;
           }>;
         },
-        any
+        unknown
       >;
       updateMany: FunctionReference<
         "mutation",
@@ -1558,7 +1558,7 @@ export declare const components: {
             numItems: number;
           };
         },
-        any
+        unknown
       >;
       updateOne: FunctionReference<
         "mutation",
@@ -2038,7 +2038,7 @@ export declare const components: {
               };
           onUpdateHandle?: string;
         },
-        any
+        unknown
       >;
     };
   };

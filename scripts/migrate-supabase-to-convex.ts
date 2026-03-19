@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { ConvexHttpClient } from 'convex/browser';
+import type { Id } from '../convex/_generated/dataModel.js';
 import { api } from '../convex/_generated/api.js';
 
 // Load environment variables
@@ -28,7 +29,7 @@ async function migrate() {
   const { data: months, error: monthsError } = await supabase.from('months').select('*');
   if (monthsError) throw new Error(`Error fetching months: ${monthsError.message}`);
 
-  const monthIdMap: Record<string, string> = {};
+  const monthIdMap: Record<string, Id<'months'>> = {};
   if (months && months.length > 0) {
     console.log(`Migrating ${months.length} months...`);
     // Batch in chunks if needed, but for simplicity do all
@@ -40,8 +41,6 @@ async function migrate() {
       originalId: m.id.toString(), // Ensure string
     }));
 
-    // Call mutation
-    // Note: We need to use 'any' casting if types are not perfectly generated yet or use raw string
     const result = await convex.mutation(api.migrations.importMonths, { months: convexMonths });
     Object.assign(monthIdMap, result);
     console.log('Months migrated.');
@@ -52,7 +51,7 @@ async function migrate() {
   const { data: products, error: productsError } = await supabase.from('products').select('*');
   if (productsError) throw new Error(`Error fetching products: ${productsError.message}`);
 
-  const productIdMap: Record<string, string> = {};
+  const productIdMap: Record<string, Id<'products'>> = {};
   if (products && products.length > 0) {
     console.log(`Migrating ${products.length} products...`);
     const convexProducts = products.map((p) => ({
@@ -77,7 +76,7 @@ async function migrate() {
   const { data: orders, error: ordersError } = await supabase.from('orders').select('*');
   if (ordersError) throw new Error(`Error fetching orders: ${ordersError.message}`);
 
-  const orderIdMap: Record<string, string> = {};
+  const orderIdMap: Record<string, Id<'orders'>> = {};
   if (orders && orders.length > 0) {
     console.log(`Migrating ${orders.length} orders...`);
     const convexOrders = [];
@@ -94,7 +93,7 @@ async function migrate() {
 
       convexOrders.push({
         userId: o.user_id || o.userId,
-        month_id: newMonthId as any, // Cast to any to satisfy Id type
+        month_id: newMonthId,
         source: o.source,
         notes: o.notes,
         originalId: o.id.toString(),
@@ -125,7 +124,7 @@ async function migrate() {
         continue;
       }
 
-      let newProductId = undefined;
+      let newProductId: Id<'products'> | undefined;
       if (i.product_id) {
         const oldProductId = i.product_id.toString();
         newProductId = productIdMap[oldProductId];
@@ -137,8 +136,8 @@ async function migrate() {
       }
 
       convexItems.push({
-        order_id: newOrderId as any,
-        product_id: newProductId as any,
+        order_id: newOrderId,
+        product_id: newProductId,
         name: i.name,
         quantity: i.quantity,
         unit: i.unit,

@@ -3,7 +3,7 @@ import { exportJWK, generateKeyPair } from 'jose';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 
 import { api, internal } from '../convex/_generated/api';
-import type { Doc } from '../convex/_generated/dataModel';
+import type { Doc, Id } from '../convex/_generated/dataModel';
 import * as analyticsModule from '../convex/analytics';
 import * as authConfigModule from '../convex/auth.config';
 import * as authModule from '../convex/auth';
@@ -66,6 +66,7 @@ const AUTH_PASSWORD = 'password123';
 const AUTH_SECRET = 'test-better-auth-secret';
 
 type OrderCategory = Doc<'order_categories'> & { usageCount: number };
+type ProductWithSource = Doc<'products'> & { sourceProductId?: Id<'products'> };
 const orderCategories = api.orderCategories;
 
 beforeAll(async () => {
@@ -220,7 +221,7 @@ describe('Convex backend auth + ownership', () => {
 
     expect(firstOverride?.userId).toBe(userA.userId);
     expect(firstOverride?.price).toBe(65);
-    expect((firstOverride as any)?.sourceProductId).toBe(sharedProductId);
+    expect((firstOverride as ProductWithSource | null)?.sourceProductId).toBe(sharedProductId);
     expect(secondOverride?._id).toBe(firstOverride?._id);
     expect(secondOverride?.price).toBe(70);
     expect(productsA).toHaveLength(1);
@@ -413,7 +414,9 @@ describe('Convex backend auth + ownership', () => {
     expect(sugarItems[0]?.product_id).toBe(sharedSugarId);
     expect(sugarItems[1]?.product_id).toBe(allUserSugarProducts[0]?._id);
     expect(allUserSugarProducts).toHaveLength(1);
-    expect((allUserSugarProducts[0] as any)?.sourceProductId).toBe(sharedSugarId);
+    expect((allUserSugarProducts[0] as ProductWithSource | undefined)?.sourceProductId).toBe(
+      sharedSugarId
+    );
   });
 
   test('analytics and month detail queries are scoped to the signed-in user', async () => {

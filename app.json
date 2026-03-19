@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "app",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
@@ -18,7 +17,6 @@
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true,
       "package": "com.saikrishna1876.grocerypal",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",

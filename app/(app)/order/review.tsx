@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -44,6 +45,18 @@ type OrderCategory = Doc<'order_categories'> & {
   usageCount: number;
 };
 
+type ParsedReviewItem = {
+  product_id?: Id<'products'> | null;
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  price?: number;
+  database_price?: number | null;
+  price_difference?: number | null;
+  confidence?: string;
+  matched_product?: string | null;
+};
+
 export default function ReviewScreen() {
   const {
     monthId,
@@ -81,8 +94,9 @@ export default function ReviewScreen() {
 
   React.useEffect(() => {
     try {
-      const parsed = JSON.parse(itemsParam || '[]');
-      const withIds = parsed.map((item: any, index: number) => ({
+      const parsed: unknown = JSON.parse(itemsParam || '[]');
+      const parsedItems = Array.isArray(parsed) ? (parsed as ParsedReviewItem[]) : [];
+      const withIds = parsedItems.map((item, index: number) => ({
         id: `item-${index}-${Date.now()}`,
         name: item.name || '',
         quantity: Number(item.quantity) || 1,
@@ -216,8 +230,8 @@ export default function ReviewScreen() {
         pathname: '/month/[id]',
         params: { id: monthId, title: monthTitle },
       });
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save order');
+    } catch (error: unknown) {
+      Alert.alert('Error', getErrorMessage(error, 'Failed to save order'));
     } finally {
       setSaving(false);
     }

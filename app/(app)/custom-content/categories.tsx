@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Pencil, Plus, Tags, Trash2 } from 'lucide-react-native';
@@ -45,8 +46,8 @@ export default function OrderCategoriesScreen() {
     try {
       await addCategory({ name: newCategoryName });
       setNewCategoryName('');
-    } catch (error: any) {
-      Alert.alert('Unable to add', error.message || 'Failed to add category.');
+    } catch (error: unknown) {
+      Alert.alert('Unable to add', getErrorMessage(error, 'Failed to add category.'));
     } finally {
       setSaving(false);
     }
@@ -62,8 +63,8 @@ export default function OrderCategoriesScreen() {
       await updateCategory({ id: editingId, name: editingName });
       setEditingId(null);
       setEditingName('');
-    } catch (error: any) {
-      Alert.alert('Unable to update', error.message || 'Failed to update category.');
+    } catch (error: unknown) {
+      Alert.alert('Unable to update', getErrorMessage(error, 'Failed to update category.'));
     } finally {
       setSaving(false);
     }
@@ -85,8 +86,11 @@ export default function OrderCategoriesScreen() {
               onPress: async () => {
                 try {
                   await removeCategory({ id: category._id });
-                } catch (error: any) {
-                  Alert.alert('Unable to delete', error.message || 'Failed to delete category.');
+                } catch (error: unknown) {
+                  Alert.alert(
+                    'Unable to delete',
+                    getErrorMessage(error, 'Failed to delete category.')
+                  );
                 }
               },
             },
@@ -175,9 +179,17 @@ export default function OrderCategoriesScreen() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={saveCategoryEdit}
-                        className="flex-1 rounded-2xl bg-primary py-3">
-                        <Text className="text-center font-medium text-primary-foreground">
-                          Save
+                        disabled={saving || !editingName.trim()}
+                        className={`flex-1 rounded-2xl py-3 ${
+                          saving || !editingName.trim() ? 'bg-muted' : 'bg-primary'
+                        }`}>
+                        <Text
+                          className={`text-center font-medium ${
+                            saving || !editingName.trim()
+                              ? 'text-muted-foreground'
+                              : 'text-primary-foreground'
+                          }`}>
+                          {saving ? 'Saving...' : 'Save'}
                         </Text>
                       </TouchableOpacity>
                     </View>

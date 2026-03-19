@@ -2,6 +2,7 @@ import { ConvexError, v } from 'convex/values';
 
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { listOrdersWithItemsForMonth } from './domain';
 import { ensureDefaultOrderCategories, getUncategorizedCategory } from './orderCategories';
@@ -21,7 +22,10 @@ const orderItemInput = v.object({
   price: v.number(),
 });
 
-async function getOwnedMonth(ctx: any, userId: string, monthId: Id<'months'>) {
+type ReaderCtx = Pick<QueryCtx, 'db'>;
+type WriterCtx = Pick<MutationCtx, 'db'>;
+
+async function getOwnedMonth(ctx: ReaderCtx, userId: string, monthId: Id<'months'>) {
   const month = await ctx.db.get(monthId);
   if (!month || month.userId !== userId) {
     throw new ConvexError('Month not found.');
@@ -31,7 +35,7 @@ async function getOwnedMonth(ctx: any, userId: string, monthId: Id<'months'>) {
 }
 
 async function upsertUserProduct(
-  ctx: any,
+  ctx: WriterCtx,
   userId: string,
   item: {
     name: string;
@@ -81,7 +85,7 @@ async function upsertUserProduct(
 }
 
 async function resolveProductForOrder(
-  ctx: any,
+  ctx: WriterCtx,
   userId: string,
   item: {
     product_id?: Id<'products'>;

@@ -1,4 +1,5 @@
 import { api } from '@/convex/_generated/api';
+import { getErrorMessage } from '@/lib/error';
 import { useAction } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -72,8 +73,8 @@ export default function ScanScreen() {
           source: scanType,
         },
       });
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to process image');
+    } catch (error: unknown) {
+      Alert.alert('Error', getErrorMessage(error, 'Failed to process image'));
       setImageUri(null);
     } finally {
       setProcessing(false);

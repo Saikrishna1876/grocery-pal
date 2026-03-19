@@ -32,3 +32,8 @@ test("hello world", () => {
 ## Review
 
 - Always run `cr --plain` to review the changes you make.
+
+## Type Safety
+
+- Do not use `any` types in project code.
+- Prefer explicit interfaces/types, generics, or `unknown` with narrowing.

@@ -1,4 +1,5 @@
 import { signInEmail, signUpEmail } from '@/lib/auth/client';
+import { getErrorMessage } from '@/lib/error';
 import { ArrowRight, Lock, Mail, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -76,8 +77,8 @@ export default function SignInScreen() {
           password,
         });
       }
-    } catch (submitError: any) {
-      setError(submitError?.message || 'Authentication failed.');
+    } catch (submitError: unknown) {
+      setError(getErrorMessage(submitError, 'Authentication failed.'));
     } finally {
       setSubmitting(false);
     }

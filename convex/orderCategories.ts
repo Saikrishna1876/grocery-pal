@@ -2,6 +2,7 @@ import { ConvexError, v } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { getLastUsedOrderCategory } from './domain';
 
@@ -11,6 +12,9 @@ const STARTER_CATEGORY_NAMES = ['Friends', 'Guests', 'Family', 'Office'];
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
   uncategorized: 'Uncategorized',
 };
+
+type ReaderCtx = Pick<QueryCtx, 'db'>;
+type WriterCtx = Pick<MutationCtx, 'db'>;
 
 function normalizeCategoryName(name: string) {
   return name.trim().replace(/\s+/g, ' ').toLowerCase();
@@ -30,7 +34,7 @@ function compareCategories(
   return a.name.localeCompare(b.name);
 }
 
-async function getCategoryById(ctx: any, userId: string, categoryId: Id<'order_categories'>) {
+async function getCategoryById(ctx: ReaderCtx, userId: string, categoryId: Id<'order_categories'>) {
   const category = await ctx.db.get(categoryId);
   if (!category || category.userId !== userId) {
     throw new ConvexError('Order category not found.');
@@ -39,23 +43,23 @@ async function getCategoryById(ctx: any, userId: string, categoryId: Id<'order_c
   return category as Doc<'order_categories'>;
 }
 
-async function getCategoryByNormalizedName(ctx: any, userId: string, normalizedName: string) {
+async function getCategoryByNormalizedName(ctx: ReaderCtx, userId: string, normalizedName: string) {
   return (await ctx.db
     .query('order_categories')
-    .withIndex('by_user_normalized_name', (q: any) =>
+    .withIndex('by_user_normalized_name', (q) =>
       q.eq('userId', userId).eq('normalizedName', normalizedName)
     )
     .unique()) as Doc<'order_categories'> | null;
 }
 
-async function getCategoryBySystemKey(ctx: any, userId: string, systemKey: string) {
+async function getCategoryBySystemKey(ctx: ReaderCtx, userId: string, systemKey: string) {
   return (await ctx.db
     .query('order_categories')
-    .withIndex('by_user_system_key', (q: any) => q.eq('userId', userId).eq('systemKey', systemKey))
+    .withIndex('by_user_system_key', (q) => q.eq('userId', userId).eq('systemKey', systemKey))
     .unique()) as Doc<'order_categories'> | null;
 }
 
-async function ensureCategory(ctx: any, userId: string, name: string, systemKey?: string) {
+async function ensureCategory(ctx: WriterCtx, userId: string, name: string, systemKey?: string) {
   if (systemKey) {
     const existingBySystemKey = await getCategoryBySystemKey(ctx, userId, systemKey);
     if (existingBySystemKey) {
@@ -84,10 +88,10 @@ async function ensureCategory(ctx: any, userId: string, name: string, systemKey?
   return (await ctx.db.get(categoryId)) as Doc<'order_categories'>;
 }
 
-export async function ensureDefaultOrderCategories(ctx: any, userId: string) {
+export async function ensureDefaultOrderCategories(ctx: WriterCtx, userId: string) {
   const existingCategories = (await ctx.db
     .query('order_categories')
-    .withIndex('by_user_normalized_name', (q: any) => q.eq('userId', userId))
+    .withIndex('by_user_normalized_name', (q) => q.eq('userId', userId))
     .collect()) as Doc<'order_categories'>[];
 
   if (existingCategories.length === 0) {
@@ -116,7 +120,7 @@ export async function ensureDefaultOrderCategories(ctx: any, userId: string) {
   return existingCategories.sort(compareCategories);
 }
 
-export async function getUncategorizedCategory(ctx: any, userId: string) {
+export async function getUncategorizedCategory(ctx: WriterCtx, userId: string) {
   const existing = await getCategoryBySystemKey(ctx, userId, UNCATEGORIZED_KEY);
   const uncategorized = existing ?? (await ensureDefaultOrderCategories(ctx, userId))[0];
   if (!uncategorized) {
@@ -130,10 +134,10 @@ export const get = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireCurrentUser(ctx);
-    const categories = await ensureDefaultOrderCategories(ctx, user._id);
+    const categories = await ensureDefaultOrderCategories(ctx as unknown as WriterCtx, user._id);
     const orders = await ctx.db
       .query('orders')
-      .withIndex('by_user_month_id', (q: any) => q.eq('userId', user._id))
+      .withIndex('by_user_month_id', (q) => q.eq('userId', user._id))
       .collect();
     const usageCounts = new Map<string, number>();
 
@@ -156,7 +160,7 @@ export const getLastUsed = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireCurrentUser(ctx);
-    await ensureDefaultOrderCategories(ctx, user._id);
+    await ensureDefaultOrderCategories(ctx as unknown as WriterCtx, user._id);
     return getLastUsedOrderCategory(ctx, user._id);
   },
 });
@@ -167,7 +171,7 @@ export const getById = query({
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    await ensureDefaultOrderCategories(ctx, user._id);
+    await ensureDefaultOrderCategories(ctx as unknown as WriterCtx, user._id);
     return getCategoryById(ctx, user._id, args.id);
   },
 });
@@ -248,14 +252,14 @@ export const remove = mutation({
       throw new ConvexError('Default categories cannot be deleted.');
     }
 
-    const linkedOrders = await ctx.db
+    const linkedOrder = await ctx.db
       .query('orders')
-      .withIndex('by_user_category_id', (q: any) =>
+      .withIndex('by_user_category_id', (q) =>
         q.eq('userId', user._id).eq('category_id', category._id)
       )
-      .collect();
+      .first();
 
-    if (linkedOrders.length > 0) {
+    if (linkedOrder) {
       throw new ConvexError('Category is in use by existing orders.');
     }
 
