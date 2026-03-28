@@ -58,6 +58,13 @@ type AnalyticsData = {
   by_order_category: { category: string; amount: number }[];
 };
 
+type AnalyticsViewModel = {
+  total: number;
+  order_count: number;
+  top_items: { name: string; quantity: number; total: number }[];
+  by_category: { category: string; amount: number }[];
+};
+
 export default function MonthDetail() {
   const { id, title } = useLocalSearchParams<{ id: string; title: string }>();
   const router = useRouter();
@@ -77,8 +84,16 @@ export default function MonthDetail() {
     null
   );
 
-  const orders = React.useMemo(() => (ordersResult as Order[] | undefined) ?? [], [ordersResult]);
-  const analytics = (analyticsResult as AnalyticsData | undefined) ?? null;
+  const orders = (ordersResult as Order[] | undefined) ?? [];
+  const analyticsData = analyticsResult as Partial<AnalyticsData> | undefined;
+  const analytics: AnalyticsViewModel | null = analyticsData
+    ? {
+        total: analyticsData.total ?? 0,
+        order_count: analyticsData.order_count ?? 0,
+        top_items: Array.isArray(analyticsData.top_items) ? analyticsData.top_items : [],
+        by_category: Array.isArray(analyticsData.by_category) ? analyticsData.by_category : [],
+      }
+    : null;
   const loading = monthId ? ordersResult === undefined || analyticsResult === undefined : false;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
