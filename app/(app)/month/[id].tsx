@@ -5,8 +5,10 @@ import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ArrowLeft,
+  Camera,
   IndianRupee,
   Package,
+  Plus,
   Search,
   ShoppingCart,
   Tag,
@@ -248,6 +250,33 @@ export default function MonthDetail() {
                 })}
               </View>
             )}
+
+            <View className="mb-4 flex-row gap-3">
+              <TouchableOpacity
+                disabled={!monthId}
+                onPress={() =>
+                  router.push({
+                    pathname: '/order/scan',
+                    params: { monthId: id, monthTitle: title },
+                  })
+                }
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5">
+                <Camera size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
+                <Text className="font-semibold text-primary-foreground">Scan Receipt</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={!monthId}
+                onPress={() =>
+                  router.push({
+                    pathname: '/order/review',
+                    params: { monthId: id, monthTitle: title, items: '[]', source: 'manual' },
+                  })
+                }
+                className="flex-row items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-3.5">
+                <Plus size={18} color={iconColor} />
+                <Text className="font-semibold text-foreground">Manual</Text>
+              </TouchableOpacity>
+            </View>
 
             <Text className="mb-3 text-lg font-semibold text-foreground">Orders</Text>
 

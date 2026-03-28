@@ -83,11 +83,12 @@ export default function ReviewScreen() {
   const [newItemUnit, setNewItemUnit] = React.useState('unit');
   const products = (useQuery(api.products.get) ?? []) as Doc<'products'>[];
   const categories = (useQuery(api.orderCategories.get) ?? []) as OrderCategory[];
-  const lastUsedCategoryId = useQuery(api.orderCategories.getLastUsed) ?? null;
+  const lastUsedCategoryId = useQuery(api.orderCategories.getLastUsed);
   const createOrder = useMutation(api.orders.add);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<Id<'order_categories'> | null>(
     null
   );
+  const userSelectedCategoryRef = React.useRef(false);
 
   const iconColor = isDark ? '#e5e5e5' : '#171717';
   const mutedColor = isDark ? '#a3a3a3' : '#737373';
@@ -123,16 +124,31 @@ export default function ReviewScreen() {
       ? categories.some((category) => category._id === selectedCategoryId)
       : false;
 
-    if (selectedStillExists) {
+    const uncategorized = categories.find((category) => category.systemKey === 'uncategorized');
+    const fallbackCategoryId = uncategorized?._id ?? categories[0]!._id;
+
+    if (lastUsedCategoryId === undefined) {
+      if (!selectedStillExists) {
+        setSelectedCategoryId(fallbackCategoryId);
+      }
       return;
     }
 
     const preferredCategory = lastUsedCategoryId
       ? categories.find((category) => category._id === lastUsedCategoryId)
       : undefined;
-    const uncategorized = categories.find((category) => category.systemKey === 'uncategorized');
+    if (
+      preferredCategory &&
+      !userSelectedCategoryRef.current &&
+      selectedCategoryId !== preferredCategory._id
+    ) {
+      setSelectedCategoryId(preferredCategory._id);
+      return;
+    }
 
-    setSelectedCategoryId(preferredCategory?._id ?? uncategorized?._id ?? categories[0]!._id);
+    if (!selectedStillExists) {
+      setSelectedCategoryId(fallbackCategoryId);
+    }
   }, [categories, lastUsedCategoryId, selectedCategoryId]);
 
   const updateItem = (id: string, updates: Partial<ReviewItem>) => {
@@ -294,7 +310,10 @@ export default function ReviewScreen() {
                 return (
                   <TouchableOpacity
                     key={category._id}
-                    onPress={() => setSelectedCategoryId(category._id)}
+                    onPress={() => {
+                      userSelectedCategoryRef.current = true;
+                      setSelectedCategoryId(category._id);
+                    }}
                     className={`rounded-full border px-4 py-2 ${
                       isSelected ? 'border-primary bg-primary' : 'border-border bg-background'
                     }`}>

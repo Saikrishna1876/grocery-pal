@@ -285,6 +285,23 @@ describe('Convex backend auth + ownership', () => {
       items: [{ name: 'Juice', quantity: 2, unit: 'ltr', price: 80 }],
     });
 
+    const renamedAgain = await userA.auth.mutation(orderCategories.update, {
+      id: renamedCategory!._id,
+      name: 'Holiday Crew',
+    });
+    expect(renamedAgain?.name).toBe('Holiday Crew');
+
+    const ordersAfterRename = await userA.auth.query(api.orders.getByMonth, {
+      monthId: month!._id,
+    });
+    const analyticsAfterRename = await userA.auth.query(api.analytics.getByMonth, {
+      monthId: month!._id,
+    });
+    expect(ordersAfterRename[0]?.category_name).toBe('Holiday Crew');
+    expect(analyticsAfterRename.by_order_category).toEqual([
+      { category: 'Holiday Crew', amount: 160 },
+    ]);
+
     const categoriesAfterUse = (await userA.auth.query(orderCategories.get, {})) as OrderCategory[];
     expect(
       categoriesAfterUse.find((category) => category._id === renamedCategory!._id)?.usageCount

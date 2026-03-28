@@ -248,6 +248,19 @@ export const update = mutation({
       normalizedName,
     });
 
+    const linkedOrders = await ctx.db
+      .query('orders')
+      .withIndex('by_user_category_id', (q) =>
+        q.eq('userId', user._id).eq('category_id', category._id)
+      )
+      .collect();
+
+    for (const order of linkedOrders) {
+      await ctx.db.patch(order._id, {
+        category_name: name,
+      });
+    }
+
     return ctx.db.get(category._id);
   },
 });
