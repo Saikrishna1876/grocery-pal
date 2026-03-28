@@ -3,7 +3,7 @@ import type { GenericCtx } from '@convex-dev/better-auth/utils';
 import { betterAuth } from 'better-auth';
 import { ConvexError } from 'convex/values';
 
-import { components } from './_generated/api';
+import { components, internal } from './_generated/api';
 import type { DataModel } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
 import { buildAuthOptions } from './authOptions';
@@ -48,6 +48,21 @@ export const createAuth = (ctx: AuthCtx) =>
   betterAuth({
     ...createAuthOptions(ctx),
     database: authComponent.adapter(ctx),
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (authUser) => {
+            if (!('runMutation' in ctx)) {
+              return;
+            }
+
+            await ctx.runMutation(internal.orderCategories.seedDefaultsForUser, {
+              userId: authUser.id,
+            });
+          },
+        },
+      },
+    },
   });
 
 export const { getAuthUser } = authComponent.clientApi();

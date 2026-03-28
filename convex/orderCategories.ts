@@ -1,7 +1,7 @@
 import { ConvexError, v } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';
-import { mutation, query } from './_generated/server';
+import { internalMutation, mutation, query } from './_generated/server';
 import type { MutationCtx, QueryCtx } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { getLastUsedOrderCategory } from './domain';
@@ -130,11 +130,26 @@ export async function getUncategorizedCategory(ctx: WriterCtx, userId: string) {
   return uncategorized;
 }
 
+export const seedDefaultsForUser = internalMutation({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ensureDefaultOrderCategories(ctx, args.userId);
+    return null;
+  },
+});
+
 export const get = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireCurrentUser(ctx);
-    const categories = await ensureDefaultOrderCategories(ctx as unknown as WriterCtx, user._id);
+    const categories = (
+      (await ctx.db
+        .query('order_categories')
+        .withIndex('by_user_normalized_name', (q) => q.eq('userId', user._id))
+        .collect()) as Doc<'order_categories'>[]
+    ).sort(compareCategories);
     const orders = await ctx.db
       .query('orders')
       .withIndex('by_user_month_id', (q) => q.eq('userId', user._id))
@@ -160,7 +175,6 @@ export const getLastUsed = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireCurrentUser(ctx);
-    await ensureDefaultOrderCategories(ctx as unknown as WriterCtx, user._id);
     return getLastUsedOrderCategory(ctx, user._id);
   },
 });
@@ -171,7 +185,6 @@ export const getById = query({
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    await ensureDefaultOrderCategories(ctx as unknown as WriterCtx, user._id);
     return getCategoryById(ctx, user._id, args.id);
   },
 });

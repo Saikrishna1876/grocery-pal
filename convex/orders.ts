@@ -225,3 +225,31 @@ export const remove = mutation({
     return { success: true };
   },
 });
+
+export const updateCategory = mutation({
+  args: {
+    id: v.id('orders'),
+    category_id: v.id('order_categories'),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
+    const order = await ctx.db.get(args.id);
+
+    if (!order || order.userId !== user._id) {
+      throw new ConvexError('Order not found.');
+    }
+
+    const categories = await ensureDefaultOrderCategories(ctx, user._id);
+    const category = categories.find((item) => item._id === args.category_id);
+    if (!category) {
+      throw new ConvexError('Order category not found.');
+    }
+
+    await ctx.db.patch(order._id, {
+      category_id: category._id,
+      category_name: category.name,
+    });
+
+    return ctx.db.get(order._id);
+  },
+});

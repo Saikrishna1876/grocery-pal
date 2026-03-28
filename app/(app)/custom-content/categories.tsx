@@ -3,7 +3,7 @@ import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Pencil, Plus, Tags, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -100,69 +100,68 @@ export default function OrderCategoriesScreen() {
 
   return (
     <View className="flex-1 bg-background">
+      <View className="border-b border-border px-5 pb-4 pt-14">
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            accessibilityLabel="Back"
+            accessibilityRole="button"
+            hitSlop={10}
+            className="rounded-full p-1">
+            <ArrowLeft size={22} color={iconColor} />
+          </TouchableOpacity>
+          <View>
+            <Text className="text-xl font-bold text-foreground">Order Categories</Text>
+            <Text className="text-xs text-muted-foreground">Manage labels for each order</Text>
+          </View>
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ padding: 20, paddingTop: 72, paddingBottom: 48 }}>
-          <View className="mb-6 flex-row items-start gap-3">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="rounded-full border border-border p-2">
-              <ArrowLeft size={18} color={iconColor} />
-            </TouchableOpacity>
-            <View className="flex-1">
-              <Text className="text-2xl font-bold text-foreground">Order Categories</Text>
-              <Text className="mt-1 text-sm leading-5 text-muted-foreground">
-                Manage the single category attached to every order. Historical analytics keeps the
-                category snapshot saved on each order.
-              </Text>
-            </View>
-          </View>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+          <Text className="mb-3 text-lg font-semibold text-foreground">Add Category</Text>
 
-          <View className="mb-6 rounded-[28px] border border-border bg-card p-5">
-            <View className="flex-row items-center gap-2">
-              <Tags size={18} color={iconColor} />
-              <Text className="text-sm font-semibold text-foreground">Add a custom category</Text>
-            </View>
+          <View className="mb-3 rounded-xl border border-border bg-card px-3 py-2">
             <TextInput
-              className="mt-4 rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+              className="py-1 text-sm text-foreground"
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               placeholder="Birthday party, Trip crew, Visitors..."
               placeholderTextColor={isDark ? '#737373' : '#a3a3a3'}
             />
-            <TouchableOpacity
-              onPress={submitNewCategory}
-              disabled={saving || !newCategoryName.trim()}
-              className={`mt-4 flex-row items-center justify-center gap-2 rounded-2xl py-3 ${
-                saving || !newCategoryName.trim() ? 'bg-muted' : 'bg-primary'
-              }`}>
-              <Plus size={16} color={isDark ? '#0a0a0a' : '#fafafa'} />
-              <Text
-                className={`font-semibold ${
-                  saving || !newCategoryName.trim()
-                    ? 'text-muted-foreground'
-                    : 'text-primary-foreground'
-                }`}>
-                {saving ? 'Saving...' : 'Add Category'}
-              </Text>
-            </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            onPress={submitNewCategory}
+            disabled={saving || !newCategoryName.trim()}
+            className={`mb-6 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
+              saving || !newCategoryName.trim() ? 'bg-muted' : 'bg-primary'
+            }`}>
+            <Plus size={16} color={isDark ? '#0a0a0a' : '#fafafa'} />
+            <Text
+              className={`font-semibold ${
+                saving || !newCategoryName.trim()
+                  ? 'text-muted-foreground'
+                  : 'text-primary-foreground'
+              }`}>
+              {saving ? 'Saving...' : 'Add Category'}
+            </Text>
+          </TouchableOpacity>
+
+          <Text className="mb-3 text-lg font-semibold text-foreground">Categories</Text>
 
           {categories.map((category) => {
             const isEditing = editingId === category._id;
             const isProtected = Boolean(category.systemKey);
 
             return (
-              <View
-                key={category._id}
-                className="mb-3 rounded-[24px] border border-border bg-card p-4">
+              <View key={category._id} className="mb-2 rounded-xl border border-border bg-card p-4">
                 {isEditing ? (
                   <>
                     <TextInput
-                      className="rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                       value={editingName}
                       onChangeText={setEditingName}
                       placeholder="Category name"
@@ -174,13 +173,13 @@ export default function OrderCategoriesScreen() {
                           setEditingId(null);
                           setEditingName('');
                         }}
-                        className="flex-1 rounded-2xl border border-border py-3">
+                        className="flex-1 rounded-xl border border-border py-3">
                         <Text className="text-center font-medium text-foreground">Cancel</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={saveCategoryEdit}
                         disabled={saving || !editingName.trim()}
-                        className={`flex-1 rounded-2xl py-3 ${
+                        className={`flex-1 rounded-xl py-3 ${
                           saving || !editingName.trim() ? 'bg-muted' : 'bg-primary'
                         }`}>
                         <Text

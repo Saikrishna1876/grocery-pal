@@ -419,6 +419,63 @@ describe('Convex backend auth + ownership', () => {
     );
   });
 
+  test('orders.updateCategory updates order snapshot and enforces ownership', async () => {
+    const t = createBackend();
+    const userA = await createAuthenticatedUser(t, 'category-update-a@example.com', 'Category A');
+    const userB = await createAuthenticatedUser(t, 'category-update-b@example.com', 'Category B');
+
+    const monthA = await userA.auth.mutation(api.months.add, { year: 2026, month: 7 });
+    await userB.auth.mutation(api.months.add, { year: 2026, month: 7 });
+
+    const firstCategory = await userA.auth.mutation(orderCategories.add, {
+      name: 'Category One',
+    });
+    const secondCategory = await userA.auth.mutation(orderCategories.add, {
+      name: 'Category Two',
+    });
+    const foreignCategory = await userB.auth.mutation(orderCategories.add, {
+      name: 'Foreign Category',
+    });
+
+    const order = await userA.auth.mutation(api.orders.add, {
+      month_id: monthA!._id,
+      source: 'manual',
+      notes: 'weekly groceries',
+      category_id: firstCategory!._id,
+      items: [{ name: 'Rice', quantity: 1, unit: 'kg', price: 90 }],
+    });
+
+    expect(order?.category_name).toBe('Category One');
+
+    const updatedOrder = await userA.auth.mutation(api.orders.updateCategory, {
+      id: order!._id,
+      category_id: secondCategory!._id,
+    });
+
+    expect(updatedOrder?.category_name).toBe('Category Two');
+    expect(updatedOrder?.category_id).toBe(secondCategory!._id);
+
+    const ordersForMonthA = await userA.auth.query(api.orders.getByMonth, { monthId: monthA!._id });
+    const analyticsA = await userA.auth.query(api.analytics.getByMonth, { monthId: monthA!._id });
+
+    expect(ordersForMonthA[0]?.category_name).toBe('Category Two');
+    expect(analyticsA.by_order_category).toEqual([{ category: 'Category Two', amount: 90 }]);
+
+    await expect(
+      userA.auth.mutation(api.orders.updateCategory, {
+        id: order!._id,
+        category_id: foreignCategory!._id,
+      })
+    ).rejects.toThrow('Order category not found.');
+
+    await expect(
+      userB.auth.mutation(api.orders.updateCategory, {
+        id: order!._id,
+        category_id: foreignCategory!._id,
+      })
+    ).rejects.toThrow('Order not found.');
+  });
+
   test('analytics and month detail queries are scoped to the signed-in user', async () => {
     const t = createBackend();
     const userA = await createAuthenticatedUser(t, 'analytics-a@example.com', 'Analytics A');
