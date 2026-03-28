@@ -39,7 +39,7 @@ export function buildAuthOptions(opts: {
 // Used by the Better Auth component adapter at module init time to derive table
 // definitions. Avoid reading deployment env vars here to prevent misleading
 // warnings and to keep schema derivation deterministic.
-export const createAuthOptionsForSchema = (_ctx: any) =>
+export const createAuthOptionsForSchema = () =>
   buildAuthOptions({
     secret: 'schema-only-secret',
     baseURL: 'http://127.0.0.1',

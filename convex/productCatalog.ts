@@ -1,9 +1,12 @@
 import { ConvexError } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 
 type ProductDoc = Doc<'products'> & { sourceProductId?: Id<'products'> };
 type ProductValues = Pick<ProductDoc, 'name' | 'category' | 'unit' | 'price'>;
+type ReaderCtx = Pick<QueryCtx, 'db'>;
+type WriterCtx = Pick<MutationCtx, 'db'>;
 
 export function sortProducts<T extends { category: string; name: string }>(products: T[]) {
   return products.sort((a, b) => {
@@ -20,14 +23,14 @@ function getNewestProduct(products: ProductDoc[]) {
   return products.sort((a, b) => b._creationTime - a._creationTime)[0] ?? null;
 }
 
-async function listProductsForUser(ctx: any, userId: string | undefined) {
+async function listProductsForUser(ctx: ReaderCtx, userId: string | undefined) {
   return ctx.db
     .query('products')
-    .withIndex('by_user_name', (q: any) => q.eq('userId', userId))
+    .withIndex('by_user_name', (q) => q.eq('userId', userId))
     .collect();
 }
 
-export async function listAccessibleProducts(ctx: any, userId: string) {
+export async function listAccessibleProducts(ctx: ReaderCtx, userId: string) {
   const [sharedProducts, userProducts] = await Promise.all([
     listProductsForUser(ctx, undefined),
     listProductsForUser(ctx, userId),
@@ -36,7 +39,7 @@ export async function listAccessibleProducts(ctx: any, userId: string) {
   return [...sharedProducts, ...userProducts];
 }
 
-export async function listCatalogProducts(ctx: any, userId: string) {
+export async function listCatalogProducts(ctx: ReaderCtx, userId: string) {
   const [sharedProducts, userProducts] = await Promise.all([
     listProductsForUser(ctx, undefined),
     listProductsForUser(ctx, userId),
@@ -53,7 +56,11 @@ export async function listCatalogProducts(ctx: any, userId: string) {
   ]);
 }
 
-export async function getAccessibleProduct(ctx: any, userId: string, productId: Id<'products'>) {
+export async function getAccessibleProduct(
+  ctx: ReaderCtx,
+  userId: string,
+  productId: Id<'products'>
+) {
   const product = await ctx.db.get(productId);
   if (!product || (product.userId && product.userId !== userId)) {
     throw new ConvexError('Product not found.');
@@ -63,34 +70,34 @@ export async function getAccessibleProduct(ctx: any, userId: string, productId: 
 }
 
 export async function getUserOverrideForSource(
-  ctx: any,
+  ctx: ReaderCtx,
   userId: string,
   sourceProductId: Id<'products'>
 ) {
   return getNewestProduct(
     await ctx.db
       .query('products')
-      .withIndex('by_user_source_product', (q: any) =>
+      .withIndex('by_user_source_product', (q) =>
         q.eq('userId', userId).eq('sourceProductId', sourceProductId)
       )
       .collect()
   );
 }
 
-export async function findLatestUserProductByName(ctx: any, userId: string, name: string) {
+export async function findLatestUserProductByName(ctx: ReaderCtx, userId: string, name: string) {
   return getNewestProduct(
     await ctx.db
       .query('products')
-      .withIndex('by_user_name', (q: any) => q.eq('userId', userId).eq('name', name))
+      .withIndex('by_user_name', (q) => q.eq('userId', userId).eq('name', name))
       .collect()
   );
 }
 
-export async function findSharedProductByName(ctx: any, name: string) {
+export async function findSharedProductByName(ctx: ReaderCtx, name: string) {
   return getNewestProduct(
     await ctx.db
       .query('products')
-      .withIndex('by_user_name', (q: any) => q.eq('userId', undefined).eq('name', name))
+      .withIndex('by_user_name', (q) => q.eq('userId', undefined).eq('name', name))
       .collect()
   );
 }
@@ -105,7 +112,7 @@ export function sameProductValues(product: ProductValues, values: ProductValues)
 }
 
 export async function upsertProductOverride(
-  ctx: any,
+  ctx: WriterCtx,
   userId: string,
   sourceProduct: ProductDoc,
   values: ProductValues

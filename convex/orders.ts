@@ -2,8 +2,10 @@ import { ConvexError, v } from 'convex/values';
 
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { listOrdersWithItemsForMonth } from './domain';
+import { ensureDefaultOrderCategories, getUncategorizedCategory } from './orderCategories';
 import {
   findLatestUserProductByName,
   findSharedProductByName,
@@ -20,7 +22,10 @@ const orderItemInput = v.object({
   price: v.number(),
 });
 
-async function getOwnedMonth(ctx: any, userId: string, monthId: Id<'months'>) {
+type ReaderCtx = Pick<QueryCtx, 'db'>;
+type WriterCtx = Pick<MutationCtx, 'db'>;
+
+async function getOwnedMonth(ctx: ReaderCtx, userId: string, monthId: Id<'months'>) {
   const month = await ctx.db.get(monthId);
   if (!month || month.userId !== userId) {
     throw new ConvexError('Month not found.');
@@ -30,7 +35,7 @@ async function getOwnedMonth(ctx: any, userId: string, monthId: Id<'months'>) {
 }
 
 async function upsertUserProduct(
-  ctx: any,
+  ctx: WriterCtx,
   userId: string,
   item: {
     name: string;
@@ -80,7 +85,7 @@ async function upsertUserProduct(
 }
 
 async function resolveProductForOrder(
-  ctx: any,
+  ctx: WriterCtx,
   userId: string,
   item: {
     product_id?: Id<'products'>;
@@ -139,14 +144,24 @@ export const add = mutation({
     month_id: v.id('months'),
     source: v.optional(v.string()),
     notes: v.optional(v.string()),
+    category_id: v.optional(v.id('order_categories')),
     items: v.array(orderItemInput),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
     await getOwnedMonth(ctx, user._id, args.month_id);
+    const categories = await ensureDefaultOrderCategories(ctx, user._id);
 
     if (args.items.length === 0) {
       throw new ConvexError('At least one item is required.');
+    }
+
+    const category = args.category_id
+      ? categories.find((item) => item._id === args.category_id)
+      : await getUncategorizedCategory(ctx, user._id);
+
+    if (!category) {
+      throw new ConvexError('Order category not found.');
     }
 
     const orderId = await ctx.db.insert('orders', {
@@ -154,6 +169,8 @@ export const add = mutation({
       month_id: args.month_id,
       source: args.source || 'manual',
       notes: args.notes?.trim() || undefined,
+      category_id: category._id,
+      category_name: category.name,
     });
 
     for (const item of args.items) {
@@ -206,5 +223,33 @@ export const remove = mutation({
 
     await ctx.db.delete(args.id);
     return { success: true };
+  },
+});
+
+export const updateCategory = mutation({
+  args: {
+    id: v.id('orders'),
+    category_id: v.id('order_categories'),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
+    const order = await ctx.db.get(args.id);
+
+    if (!order || order.userId !== user._id) {
+      throw new ConvexError('Order not found.');
+    }
+
+    const categories = await ensureDefaultOrderCategories(ctx, user._id);
+    const category = categories.find((item) => item._id === args.category_id);
+    if (!category) {
+      throw new ConvexError('Order category not found.');
+    }
+
+    await ctx.db.patch(order._id, {
+      category_id: category._id,
+      category_name: category.name,
+    });
+
+    return ctx.db.get(order._id);
   },
 });

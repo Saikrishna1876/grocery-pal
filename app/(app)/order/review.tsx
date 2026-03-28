@@ -1,7 +1,8 @@
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -9,6 +10,7 @@ import {
   Minus,
   Plus,
   Search,
+  Settings2,
   Trash2,
   TrendingDown,
   TrendingUp,
@@ -39,6 +41,22 @@ type ReviewItem = {
   matched_product: string | null;
 };
 
+type OrderCategory = Doc<'order_categories'> & {
+  usageCount: number;
+};
+
+type ParsedReviewItem = {
+  product_id?: Id<'products'> | null;
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  price?: number;
+  database_price?: number | null;
+  price_difference?: number | null;
+  confidence?: string;
+  matched_product?: string | null;
+};
+
 export default function ReviewScreen() {
   const {
     monthId,
@@ -64,15 +82,22 @@ export default function ReviewScreen() {
   const [newItemQty, setNewItemQty] = React.useState('1');
   const [newItemUnit, setNewItemUnit] = React.useState('unit');
   const products = (useQuery(api.products.get) ?? []) as Doc<'products'>[];
+  const categories = (useQuery(api.orderCategories.get) ?? []) as OrderCategory[];
+  const lastUsedCategoryId = useQuery(api.orderCategories.getLastUsed);
   const createOrder = useMutation(api.orders.add);
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<Id<'order_categories'> | null>(
+    null
+  );
+  const userSelectedCategoryRef = React.useRef(false);
 
   const iconColor = isDark ? '#e5e5e5' : '#171717';
   const mutedColor = isDark ? '#a3a3a3' : '#737373';
 
   React.useEffect(() => {
     try {
-      const parsed = JSON.parse(itemsParam || '[]');
-      const withIds = parsed.map((item: any, index: number) => ({
+      const parsed: unknown = JSON.parse(itemsParam || '[]');
+      const parsedItems = Array.isArray(parsed) ? (parsed as ParsedReviewItem[]) : [];
+      const withIds = parsedItems.map((item, index: number) => ({
         id: `item-${index}-${Date.now()}`,
         name: item.name || '',
         quantity: Number(item.quantity) || 1,
@@ -89,6 +114,42 @@ export default function ReviewScreen() {
       setReviewItems([]);
     }
   }, [itemsParam]);
+
+  React.useEffect(() => {
+    if (categories.length === 0) {
+      return;
+    }
+
+    const selectedStillExists = selectedCategoryId
+      ? categories.some((category) => category._id === selectedCategoryId)
+      : false;
+
+    const uncategorized = categories.find((category) => category.systemKey === 'uncategorized');
+    const fallbackCategoryId = uncategorized?._id ?? categories[0]!._id;
+
+    if (lastUsedCategoryId === undefined) {
+      if (!selectedStillExists) {
+        setSelectedCategoryId(fallbackCategoryId);
+      }
+      return;
+    }
+
+    const preferredCategory = lastUsedCategoryId
+      ? categories.find((category) => category._id === lastUsedCategoryId)
+      : undefined;
+    if (
+      preferredCategory &&
+      !userSelectedCategoryRef.current &&
+      selectedCategoryId !== preferredCategory._id
+    ) {
+      setSelectedCategoryId(preferredCategory._id);
+      return;
+    }
+
+    if (!selectedStillExists) {
+      setSelectedCategoryId(fallbackCategoryId);
+    }
+  }, [categories, lastUsedCategoryId, selectedCategoryId]);
 
   const updateItem = (id: string, updates: Partial<ReviewItem>) => {
     setReviewItems((prev) =>
@@ -151,10 +212,17 @@ export default function ReviewScreen() {
   };
 
   const total = reviewItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const selectedCategory =
+    categories.find((category) => category._id === selectedCategoryId) ?? null;
 
   const confirmOrder = async () => {
     if (reviewItems.length === 0) {
       Alert.alert('No Items', 'Add at least one item before confirming.');
+      return;
+    }
+
+    if (!selectedCategoryId) {
+      Alert.alert('Choose Category', 'Select one order category before confirming.');
       return;
     }
 
@@ -164,6 +232,7 @@ export default function ReviewScreen() {
         month_id: monthId as Id<'months'>,
         source: source || 'manual',
         notes: '',
+        category_id: selectedCategoryId,
         items: reviewItems.map((item) => ({
           product_id: item.product_id || undefined,
           name: item.name,
@@ -177,8 +246,8 @@ export default function ReviewScreen() {
         pathname: '/month/[id]',
         params: { id: monthId, title: monthTitle },
       });
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save order');
+    } catch (error: unknown) {
+      Alert.alert('Error', getErrorMessage(error, 'Failed to save order'));
     } finally {
       setSaving(false);
     }
@@ -216,6 +285,56 @@ export default function ReviewScreen() {
           className="flex-1"
           contentContainerStyle={{ padding: 20, paddingBottom: 200 }}
           keyboardShouldPersistTaps="handled">
+          <View className="mb-4 rounded-2xl border border-border bg-card p-4">
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-sm font-semibold text-foreground">Order Category</Text>
+                <Text className="mt-1 text-xs text-muted-foreground">
+                  Use one category per order so analytics stays easy to read.
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push('/custom-content/categories' as Href)}
+                className="flex-row items-center gap-1 rounded-full border border-border px-3 py-2">
+                <Settings2 size={14} color={iconColor} />
+                <Text className="text-xs font-medium text-foreground">Manage</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingTop: 14, paddingRight: 8 }}>
+              {categories.map((category) => {
+                const isSelected = selectedCategoryId === category._id;
+                return (
+                  <TouchableOpacity
+                    key={category._id}
+                    onPress={() => {
+                      userSelectedCategoryRef.current = true;
+                      setSelectedCategoryId(category._id);
+                    }}
+                    className={`rounded-full border px-4 py-2 ${
+                      isSelected ? 'border-primary bg-primary' : 'border-border bg-background'
+                    }`}>
+                    <Text
+                      className={`text-sm font-medium ${
+                        isSelected ? 'text-primary-foreground' : 'text-foreground'
+                      }`}>
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {selectedCategory && (
+              <Text className="mt-3 text-xs text-muted-foreground">
+                Saving this order under {selectedCategory.name}.
+              </Text>
+            )}
+          </View>
+
           {reviewItems.length === 0 && !showAddItem ? (
             <View className="items-center py-16">
               <AlertTriangle size={40} color={mutedColor} />

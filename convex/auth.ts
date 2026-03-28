@@ -1,13 +1,17 @@
 import { createClient } from '@convex-dev/better-auth';
+import type { GenericCtx } from '@convex-dev/better-auth/utils';
 import { betterAuth } from 'better-auth';
 import { ConvexError } from 'convex/values';
 
-import { components } from './_generated/api';
+import { components, internal } from './_generated/api';
+import type { DataModel } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
 import { buildAuthOptions } from './authOptions';
 import schema from './betterAuth/schema';
 
-export const authComponent = createClient(components.betterAuth, {
+type AuthCtx = GenericCtx<DataModel>;
+
+export const authComponent = createClient<DataModel>(components.betterAuth, {
   local: { schema },
 });
 
@@ -33,22 +37,37 @@ function getBetterAuthBaseUrl() {
   return baseUrl;
 }
 
-export const createAuthOptions = (_ctx: any) =>
+export const createAuthOptions = (_ctx: AuthCtx) =>
   buildAuthOptions({
     secret: getBetterAuthSecret(),
     baseURL: getBetterAuthBaseUrl(),
     jwks: process.env.JWKS,
   });
 
-export const createAuth = (ctx: any) =>
+export const createAuth = (ctx: AuthCtx) =>
   betterAuth({
     ...createAuthOptions(ctx),
     database: authComponent.adapter(ctx),
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (authUser) => {
+            if (!('runMutation' in ctx)) {
+              return;
+            }
+
+            await ctx.runMutation(internal.orderCategories.seedDefaultsForUser, {
+              userId: authUser.id,
+            });
+          },
+        },
+      },
+    },
   });
 
 export const { getAuthUser } = authComponent.clientApi();
 
-export async function requireCurrentUser(ctx: any) {
+export async function requireCurrentUser(ctx: AuthCtx) {
   try {
     return await authComponent.getAuthUser(ctx);
   } catch (error) {

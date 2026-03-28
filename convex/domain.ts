@@ -1,5 +1,6 @@
 import { ConvexError } from 'convex/values';
 import type { Doc, Id } from './_generated/dataModel';
+import type { QueryCtx } from './_generated/server';
 
 import { listAccessibleProducts } from './productCatalog';
 
@@ -11,6 +12,8 @@ type OrderWithItems = Doc<'orders'> & {
   total: number;
 };
 
+type OrderCategorySummary = Pick<Doc<'orders'>, '_id' | '_creationTime' | 'category_id'>;
+
 type ItemAggregate = {
   name: string;
   category: string;
@@ -19,10 +22,21 @@ type ItemAggregate = {
   count: number;
 };
 
-export async function listOrdersWithItemsForMonth(ctx: any, userId: UserId, monthId: Id<'months'>) {
+type SpendByCategory = {
+  category: string;
+  amount: number;
+};
+
+type ReaderCtx = Pick<QueryCtx, 'db'>;
+
+export async function listOrdersWithItemsForMonth(
+  ctx: ReaderCtx,
+  userId: UserId,
+  monthId: Id<'months'>
+) {
   const orders = await ctx.db
     .query('orders')
-    .withIndex('by_user_month_id', (q: any) => q.eq('userId', userId).eq('month_id', monthId))
+    .withIndex('by_user_month_id', (q) => q.eq('userId', userId).eq('month_id', monthId))
     .order('desc')
     .collect();
 
@@ -30,7 +44,7 @@ export async function listOrdersWithItemsForMonth(ctx: any, userId: UserId, mont
     orders.map(async (order: Doc<'orders'>): Promise<OrderWithItems> => {
       const items = await ctx.db
         .query('order_items')
-        .withIndex('by_order_id', (q: any) => q.eq('order_id', order._id))
+        .withIndex('by_order_id', (q) => q.eq('order_id', order._id))
         .collect();
       const total = items.reduce(
         (sum: number, item: Doc<'order_items'>) => sum + item.price * item.quantity,
@@ -44,7 +58,7 @@ export async function listOrdersWithItemsForMonth(ctx: any, userId: UserId, mont
   return orderList;
 }
 
-export async function getMonthAnalytics(ctx: any, userId: UserId, monthId: Id<'months'>) {
+export async function getMonthAnalytics(ctx: ReaderCtx, userId: UserId, monthId: Id<'months'>) {
   const month = await ctx.db.get(monthId);
   if (!month || month.userId !== userId) {
     throw new ConvexError('Month not found.');
@@ -59,9 +73,18 @@ export async function getMonthAnalytics(ctx: any, userId: UserId, monthId: Id<'m
   let total = 0;
   let itemCount = 0;
   const itemMap = new Map<string, ItemAggregate>();
-  const byCategory = new Map<string, number>();
+  const byItemCategory = new Map<string, number>();
+  const byOrderCategory = new Map<string, number>();
 
   for (const order of orders) {
+    const orderCategoryName = order.category_name?.trim() || 'Uncategorized';
+    const orderTotal = order.total;
+
+    byOrderCategory.set(
+      orderCategoryName,
+      (byOrderCategory.get(orderCategoryName) ?? 0) + orderTotal
+    );
+
     for (const item of order.items) {
       const subtotal = item.price * item.quantity;
       total += subtotal;
@@ -83,11 +106,15 @@ export async function getMonthAnalytics(ctx: any, userId: UserId, monthId: Id<'m
       aggregate.count += 1;
       aggregate.category = category;
       itemMap.set(key, aggregate);
-      byCategory.set(category, (byCategory.get(category) ?? 0) + subtotal);
+      byItemCategory.set(category, (byItemCategory.get(category) ?? 0) + subtotal);
     }
   }
 
   const items = Array.from(itemMap.values()).sort((a, b) => b.total - a.total);
+  const mapSpendByCategory = (source: Map<string, number>): SpendByCategory[] =>
+    Array.from(source.entries())
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount);
 
   return {
     total,
@@ -95,16 +122,15 @@ export async function getMonthAnalytics(ctx: any, userId: UserId, monthId: Id<'m
     item_count: itemCount,
     items,
     top_items: items.slice(0, 5),
-    by_category: Array.from(byCategory.entries())
-      .map(([category, amount]) => ({ category, amount }))
-      .sort((a, b) => b.amount - a.amount),
+    by_item_category: mapSpendByCategory(byItemCategory),
+    by_order_category: mapSpendByCategory(byOrderCategory),
   };
 }
 
-export async function getMonthSummaries(ctx: any, userId: UserId) {
+export async function getMonthSummaries(ctx: ReaderCtx, userId: UserId) {
   const months = await ctx.db
     .query('months')
-    .withIndex('by_user_year_month', (q: any) => q.eq('userId', userId))
+    .withIndex('by_user_year_month', (q) => q.eq('userId', userId))
     .order('desc')
     .collect();
 
@@ -120,4 +146,16 @@ export async function getMonthSummaries(ctx: any, userId: UserId) {
       };
     })
   );
+}
+
+export async function getLastUsedOrderCategory(ctx: ReaderCtx, userId: UserId) {
+  const orders = (await ctx.db
+    .query('orders')
+    .withIndex('by_user_month_id', (q) => q.eq('userId', userId))
+    .collect()) as OrderCategorySummary[];
+
+  const latestCategorizedOrder = orders
+    .sort((a, b) => b._creationTime - a._creationTime)
+    .find((order) => order.category_id);
+  return latestCategorizedOrder?.category_id ?? null;
 }

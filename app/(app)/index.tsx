@@ -2,7 +2,7 @@ import { api } from '@/convex/_generated/api';
 import { signOut } from '@/lib/auth/client';
 import { MONTH_NAMES } from '@/lib/months';
 import { useMutation, useQuery } from 'convex/react';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import {
   CalendarDays,
   ChevronRight,
@@ -10,6 +10,7 @@ import {
   LogOut,
   Plus,
   ShoppingCart,
+  Tag,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react-native';
@@ -144,6 +145,12 @@ export default function Dashboard() {
                 className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5">
                 <Plus size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
                 <Text className="font-semibold text-primary-foreground">New Month</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/custom-content' as Href)}
+                className="flex-row items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5">
+                <Tag size={18} color={iconColor} />
+                <Text className="font-semibold text-foreground">Custom Content</Text>
               </TouchableOpacity>
             </View>
 

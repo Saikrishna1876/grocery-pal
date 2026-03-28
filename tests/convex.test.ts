@@ -3,21 +3,71 @@ import { exportJWK, generateKeyPair } from 'jose';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 
 import { api, internal } from '../convex/_generated/api';
+import type { Doc, Id } from '../convex/_generated/dataModel';
+import * as analyticsModule from '../convex/analytics';
+import * as authConfigModule from '../convex/auth.config';
+import * as authModule from '../convex/auth';
+import * as authOptionsModule from '../convex/authOptions';
+import * as generatedApiModule from '../convex/_generated/api';
+import * as generatedServerModule from '../convex/_generated/server';
+import * as httpModule from '../convex/http';
+import * as domainModule from '../convex/domain';
+import * as migrationsModule from '../convex/migrations';
+import * as monthsModule from '../convex/months';
+import * as orderCategoriesModule from '../convex/orderCategories';
+import * as ordersModule from '../convex/orders';
+import * as productCatalogModule from '../convex/productCatalog';
+import * as productsModule from '../convex/products';
+import * as scanModule from '../convex/scan';
+import * as schemaModule from '../convex/schema';
+import * as betterAuthAdapterModule from '../convex/betterAuth/adapter';
+import * as betterAuthAuthModule from '../convex/betterAuth/auth';
+import * as betterAuthGeneratedApiModule from '../convex/betterAuth/_generated/api';
+import * as betterAuthGeneratedComponentModule from '../convex/betterAuth/_generated/component';
+import * as betterAuthGeneratedDataModelModule from '../convex/betterAuth/_generated/dataModel';
+import * as betterAuthGeneratedServerModule from '../convex/betterAuth/_generated/server';
+import * as betterAuthSchemaModule from '../convex/betterAuth/schema';
 import betterAuthSchema from '../convex/betterAuth/schema';
 import schema from '../convex/schema';
 
 const modules = {
-  ...import.meta.glob('../convex/*.ts'),
-  ...import.meta.glob('../convex/_generated/*.{js,ts}'),
+  '../convex/analytics.ts': () => Promise.resolve(analyticsModule),
+  '../convex/auth.config.ts': () => Promise.resolve(authConfigModule),
+  '../convex/auth.ts': () => Promise.resolve(authModule),
+  '../convex/authOptions.ts': () => Promise.resolve(authOptionsModule),
+  '../convex/domain.ts': () => Promise.resolve(domainModule),
+  '../convex/http.ts': () => Promise.resolve(httpModule),
+  '../convex/migrations.ts': () => Promise.resolve(migrationsModule),
+  '../convex/months.ts': () => Promise.resolve(monthsModule),
+  '../convex/orderCategories.ts': () => Promise.resolve(orderCategoriesModule),
+  '../convex/orders.ts': () => Promise.resolve(ordersModule),
+  '../convex/productCatalog.ts': () => Promise.resolve(productCatalogModule),
+  '../convex/products.ts': () => Promise.resolve(productsModule),
+  '../convex/scan.ts': () => Promise.resolve(scanModule),
+  '../convex/schema.ts': () => Promise.resolve(schemaModule),
+  '../convex/_generated/api.js': () => Promise.resolve(generatedApiModule),
+  '../convex/_generated/server.js': () => Promise.resolve(generatedServerModule),
 };
 
 const betterAuthModules = {
-  ...import.meta.glob('../convex/betterAuth/*.ts'),
-  ...import.meta.glob('../convex/betterAuth/_generated/*.{js,ts}'),
+  '../convex/betterAuth/adapter.ts': () => Promise.resolve(betterAuthAdapterModule),
+  '../convex/betterAuth/auth.ts': () => Promise.resolve(betterAuthAuthModule),
+  '../convex/betterAuth/schema.ts': () => Promise.resolve(betterAuthSchemaModule),
+  '../convex/betterAuth/_generated/api.ts': () => Promise.resolve(betterAuthGeneratedApiModule),
+  '../convex/betterAuth/_generated/component.ts': () =>
+    Promise.resolve(betterAuthGeneratedComponentModule),
+  '../convex/betterAuth/_generated/dataModel.ts': () =>
+    Promise.resolve(betterAuthGeneratedDataModelModule),
+  '../convex/betterAuth/_generated/server.ts': () =>
+    Promise.resolve(betterAuthGeneratedServerModule),
 };
 
 const AUTH_PASSWORD = 'password123';
 const AUTH_SECRET = 'test-better-auth-secret';
+
+type OrderCategory = Doc<'order_categories'> & { usageCount: number };
+type ProductWithSource = Doc<'products'> & { sourceProductId?: Id<'products'> };
+const orderCategories = api.orderCategories;
 
 beforeAll(async () => {
   process.env.BETTER_AUTH_SECRET = AUTH_SECRET;
@@ -171,7 +221,7 @@ describe('Convex backend auth + ownership', () => {
 
     expect(firstOverride?.userId).toBe(userA.userId);
     expect(firstOverride?.price).toBe(65);
-    expect((firstOverride as any)?.sourceProductId).toBe(sharedProductId);
+    expect((firstOverride as ProductWithSource | null)?.sourceProductId).toBe(sharedProductId);
     expect(secondOverride?._id).toBe(firstOverride?._id);
     expect(secondOverride?.price).toBe(70);
     expect(productsA).toHaveLength(1);
@@ -184,6 +234,87 @@ describe('Convex backend auth + ownership', () => {
     expect(ownedMilkProducts).toHaveLength(1);
   });
 
+  test('order categories seed per user and support custom add, rename, and protected delete', async () => {
+    const t = createBackend();
+    const userA = await createAuthenticatedUser(t, 'categories-a@example.com', 'Categories A');
+    const userB = await createAuthenticatedUser(t, 'categories-b@example.com', 'Categories B');
+
+    const initialCategoriesA = (await userA.auth.query(orderCategories.get, {})) as OrderCategory[];
+    const initialCategoriesB = (await userB.auth.query(orderCategories.get, {})) as OrderCategory[];
+
+    expect(initialCategoriesA.map((category) => category.name)).toEqual([
+      'Uncategorized',
+      'Family',
+      'Friends',
+      'Guests',
+      'Office',
+    ]);
+    expect(initialCategoriesB).toHaveLength(5);
+
+    const customCategory = await userA.auth.mutation(orderCategories.add, {
+      name: 'Travel Crew',
+    });
+    expect(customCategory?.name).toBe('Travel Crew');
+
+    await expect(
+      userA.auth.mutation(orderCategories.add, { name: 'travel    crew' })
+    ).rejects.toThrow('Category already exists.');
+
+    const renamedCategory = await userA.auth.mutation(orderCategories.update, {
+      id: customCategory!._id,
+      name: 'Trip Crew',
+    });
+    expect(renamedCategory?.name).toBe('Trip Crew');
+
+    const uncategorized = initialCategoriesA.find(
+      (category) => category.systemKey === 'uncategorized'
+    );
+    await expect(
+      userA.auth.mutation(orderCategories.update, {
+        id: uncategorized!._id,
+        name: 'Misc',
+      })
+    ).rejects.toThrow('Uncategorized cannot be renamed.');
+
+    const month = await userA.auth.mutation(api.months.add, { year: 2026, month: 5 });
+    await userA.auth.mutation(api.orders.add, {
+      month_id: month!._id,
+      source: 'manual',
+      notes: '',
+      category_id: renamedCategory!._id,
+      items: [{ name: 'Juice', quantity: 2, unit: 'ltr', price: 80 }],
+    });
+
+    const renamedAgain = await userA.auth.mutation(orderCategories.update, {
+      id: renamedCategory!._id,
+      name: 'Holiday Crew',
+    });
+    expect(renamedAgain?.name).toBe('Holiday Crew');
+
+    const ordersAfterRename = await userA.auth.query(api.orders.getByMonth, {
+      monthId: month!._id,
+    });
+    const analyticsAfterRename = await userA.auth.query(api.analytics.getByMonth, {
+      monthId: month!._id,
+    });
+    expect(ordersAfterRename[0]?.category_name).toBe('Holiday Crew');
+    expect(analyticsAfterRename.by_order_category).toEqual([
+      { category: 'Holiday Crew', amount: 160 },
+    ]);
+
+    const categoriesAfterUse = (await userA.auth.query(orderCategories.get, {})) as OrderCategory[];
+    expect(
+      categoriesAfterUse.find((category) => category._id === renamedCategory!._id)?.usageCount
+    ).toBe(1);
+
+    await expect(
+      userA.auth.mutation(orderCategories.remove, { id: renamedCategory!._id })
+    ).rejects.toThrow('Category is in use by existing orders.');
+    await expect(
+      userB.auth.mutation(orderCategories.remove, { id: renamedCategory!._id })
+    ).rejects.toThrow('Order category not found.');
+  });
+
   test('orders.add auto-creates products, updates owned products, uses shared defaults, and rejects foreign product references', async () => {
     const t = createBackend();
     const userA = await createAuthenticatedUser(t, 'order-a@example.com', 'Order A');
@@ -191,6 +322,8 @@ describe('Convex backend auth + ownership', () => {
 
     const monthA = await userA.auth.mutation(api.months.add, { year: 2026, month: 2 });
     const monthB = await userB.auth.mutation(api.months.add, { year: 2026, month: 2 });
+    const categoriesA = (await userA.auth.query(orderCategories.get, {})) as OrderCategory[];
+    const friendsCategory = categoriesA.find((category) => category.name === 'Friends');
     const productA = await userA.auth.mutation(api.products.add, {
       name: 'Rice',
       category: 'Grains',
@@ -233,6 +366,7 @@ describe('Convex backend auth + ownership', () => {
       month_id: monthA!._id,
       source: 'manual',
       notes: '',
+      category_id: friendsCategory!._id,
       items: [
         {
           product_id: productA!._id,
@@ -274,6 +408,7 @@ describe('Convex backend auth + ownership', () => {
 
     const productsA = await userA.auth.query(api.products.get, {});
     const productsB = await userB.auth.query(api.products.get, {});
+    const ordersForMonthA = await userA.auth.query(api.orders.getByMonth, { monthId: monthA!._id });
     const orderItemsA = await t.run(async (ctx) => ctx.db.query('order_items').collect());
     const sugarItems = orderItemsA.filter((item) => item.name === 'Sugar');
     const allUserSugarProducts = await t.run(async (ctx) =>
@@ -290,11 +425,72 @@ describe('Convex backend auth + ownership', () => {
     expect(productsB).toHaveLength(2);
     expect(productsB.find((product) => product.name === 'Rice')?.price).toBe(productB?.price);
     expect(productsB.find((product) => product.name === 'Sugar')?._id).toBe(sharedSugarId);
+    expect(ordersForMonthA[0]?.category_name).toBe('Uncategorized');
+    expect(ordersForMonthA[1]?.category_name).toBe('Friends');
     expect(sugarItems).toHaveLength(2);
     expect(sugarItems[0]?.product_id).toBe(sharedSugarId);
     expect(sugarItems[1]?.product_id).toBe(allUserSugarProducts[0]?._id);
     expect(allUserSugarProducts).toHaveLength(1);
-    expect((allUserSugarProducts[0] as any)?.sourceProductId).toBe(sharedSugarId);
+    expect((allUserSugarProducts[0] as ProductWithSource | undefined)?.sourceProductId).toBe(
+      sharedSugarId
+    );
+  });
+
+  test('orders.updateCategory updates order snapshot and enforces ownership', async () => {
+    const t = createBackend();
+    const userA = await createAuthenticatedUser(t, 'category-update-a@example.com', 'Category A');
+    const userB = await createAuthenticatedUser(t, 'category-update-b@example.com', 'Category B');
+
+    const monthA = await userA.auth.mutation(api.months.add, { year: 2026, month: 7 });
+    await userB.auth.mutation(api.months.add, { year: 2026, month: 7 });
+
+    const firstCategory = await userA.auth.mutation(orderCategories.add, {
+      name: 'Category One',
+    });
+    const secondCategory = await userA.auth.mutation(orderCategories.add, {
+      name: 'Category Two',
+    });
+    const foreignCategory = await userB.auth.mutation(orderCategories.add, {
+      name: 'Foreign Category',
+    });
+
+    const order = await userA.auth.mutation(api.orders.add, {
+      month_id: monthA!._id,
+      source: 'manual',
+      notes: 'weekly groceries',
+      category_id: firstCategory!._id,
+      items: [{ name: 'Rice', quantity: 1, unit: 'kg', price: 90 }],
+    });
+
+    expect(order?.category_name).toBe('Category One');
+
+    const updatedOrder = await userA.auth.mutation(api.orders.updateCategory, {
+      id: order!._id,
+      category_id: secondCategory!._id,
+    });
+
+    expect(updatedOrder?.category_name).toBe('Category Two');
+    expect(updatedOrder?.category_id).toBe(secondCategory!._id);
+
+    const ordersForMonthA = await userA.auth.query(api.orders.getByMonth, { monthId: monthA!._id });
+    const analyticsA = await userA.auth.query(api.analytics.getByMonth, { monthId: monthA!._id });
+
+    expect(ordersForMonthA[0]?.category_name).toBe('Category Two');
+    expect(analyticsA.by_order_category).toEqual([{ category: 'Category Two', amount: 90 }]);
+
+    await expect(
+      userA.auth.mutation(api.orders.updateCategory, {
+        id: order!._id,
+        category_id: foreignCategory!._id,
+      })
+    ).rejects.toThrow('Order category not found.');
+
+    await expect(
+      userB.auth.mutation(api.orders.updateCategory, {
+        id: order!._id,
+        category_id: foreignCategory!._id,
+      })
+    ).rejects.toThrow('Order not found.');
   });
 
   test('analytics and month detail queries are scoped to the signed-in user', async () => {
@@ -305,17 +501,22 @@ describe('Convex backend auth + ownership', () => {
     const monthA1 = await userA.auth.mutation(api.months.add, { year: 2026, month: 1 });
     const monthA2 = await userA.auth.mutation(api.months.add, { year: 2026, month: 2 });
     const monthB = await userB.auth.mutation(api.months.add, { year: 2026, month: 1 });
+    const categoriesA = (await userA.auth.query(orderCategories.get, {})) as OrderCategory[];
+    const friendsCategory = categoriesA.find((category) => category.name === 'Friends');
+    const guestsCategory = categoriesA.find((category) => category.name === 'Guests');
 
     await userA.auth.mutation(api.orders.add, {
       month_id: monthA1!._id,
       source: 'manual',
       notes: '',
+      category_id: friendsCategory!._id,
       items: [{ name: 'Dal', quantity: 2, unit: 'kg', price: 120 }],
     });
     await userA.auth.mutation(api.orders.add, {
       month_id: monthA2!._id,
       source: 'manual',
       notes: '',
+      category_id: guestsCategory!._id,
       items: [{ name: 'Oil', quantity: 1, unit: 'ltr', price: 150 }],
     });
     await userB.auth.mutation(api.orders.add, {
@@ -330,6 +531,7 @@ describe('Convex backend auth + ownership', () => {
 
     expect(analyticsA.total).toBe(240);
     expect(analyticsA.top_items[0]?.name).toBe('Dal');
+    expect(analyticsA.by_order_category).toEqual([{ category: 'Friends', amount: 240 }]);
     expect(comparisonA).toHaveLength(2);
     expect(comparisonA.every((month) => month.total !== 60)).toBe(true);
 

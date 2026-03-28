@@ -1,13 +1,12 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Grocery Pal",
+    "slug": "grocery-pal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "app",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
@@ -15,10 +14,10 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.saikrishna1876.grocerypal"
     },
     "android": {
-      "edgeToEdgeEnabled": true,
       "package": "com.saikrishna1876.grocerypal",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Platform } from 'react-native';
+import { getErrorMessage, getErrorStack } from '@/lib/error';
 
 interface Props {
   children: React.ReactNode;
@@ -13,10 +14,11 @@ interface State {
 
 const webTargetOrigins = ['http://localhost:3000', 'https://orchids.app'];
 
-function sendErrorToIframeParent(error: any, errorInfo?: any) {
+function sendErrorToIframeParent(error: unknown, errorInfo?: React.ErrorInfo) {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     // Only send errors that have a stack property
-    if (!error?.stack) {
+    const stack = getErrorStack(error);
+    if (!stack) {
       return;
     }
 
@@ -29,8 +31,8 @@ function sendErrorToIframeParent(error: any, errorInfo?: any) {
     const errorMessage = {
       type: 'ERROR_CAPTURED',
       error: {
-        message: error?.message || error?.toString() || 'Unknown error',
-        stack: error?.stack,
+        message: getErrorMessage(error, 'Unknown error'),
+        stack,
         componentStack: errorInfo?.componentStack,
         source: 'error-boundary',
       },
