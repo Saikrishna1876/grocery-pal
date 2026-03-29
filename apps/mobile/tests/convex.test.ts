@@ -2,63 +2,69 @@ import { convexTest } from 'convex-test';
 import { exportJWK, generateKeyPair } from 'jose';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 
-import { api, internal } from '../convex/_generated/api';
-import type { Doc, Id } from '../convex/_generated/dataModel';
-import * as analyticsModule from '../convex/analytics';
-import * as authConfigModule from '../convex/auth.config';
-import * as authModule from '../convex/auth';
-import * as authOptionsModule from '../convex/authOptions';
-import * as generatedApiModule from '../convex/_generated/api';
-import * as generatedServerModule from '../convex/_generated/server';
-import * as httpModule from '../convex/http';
-import * as domainModule from '../convex/domain';
-import * as migrationsModule from '../convex/migrations';
-import * as monthsModule from '../convex/months';
-import * as orderCategoriesModule from '../convex/orderCategories';
-import * as ordersModule from '../convex/orders';
-import * as productCatalogModule from '../convex/productCatalog';
-import * as productsModule from '../convex/products';
-import * as scanModule from '../convex/scan';
-import * as schemaModule from '../convex/schema';
-import * as betterAuthAdapterModule from '../convex/betterAuth/adapter';
-import * as betterAuthAuthModule from '../convex/betterAuth/auth';
-import * as betterAuthGeneratedApiModule from '../convex/betterAuth/_generated/api';
-import * as betterAuthGeneratedComponentModule from '../convex/betterAuth/_generated/component';
-import * as betterAuthGeneratedDataModelModule from '../convex/betterAuth/_generated/dataModel';
-import * as betterAuthGeneratedServerModule from '../convex/betterAuth/_generated/server';
-import * as betterAuthSchemaModule from '../convex/betterAuth/schema';
-import betterAuthSchema from '../convex/betterAuth/schema';
-import schema from '../convex/schema';
+import { api, internal } from '../../../packages/backend/convex/_generated/api';
+import type { Doc, Id } from '../../../packages/backend/convex/_generated/dataModel';
+import * as analyticsModule from '../../../packages/backend/convex/analytics';
+import * as authConfigModule from '../../../packages/backend/convex/auth.config';
+import * as authModule from '../../../packages/backend/convex/auth';
+import * as authOptionsModule from '../../../packages/backend/convex/authOptions';
+import * as generatedApiModule from '../../../packages/backend/convex/_generated/api';
+import * as generatedServerModule from '../../../packages/backend/convex/_generated/server';
+import * as httpModule from '../../../packages/backend/convex/http';
+import * as domainModule from '../../../packages/backend/convex/domain';
+import * as migrationsModule from '../../../packages/backend/convex/migrations';
+import * as monthsModule from '../../../packages/backend/convex/months';
+import * as orderCategoriesModule from '../../../packages/backend/convex/orderCategories';
+import * as ordersModule from '../../../packages/backend/convex/orders';
+import * as productCatalogModule from '../../../packages/backend/convex/productCatalog';
+import * as productsModule from '../../../packages/backend/convex/products';
+import * as scanModule from '../../../packages/backend/convex/scan';
+import * as schemaModule from '../../../packages/backend/convex/schema';
+import * as betterAuthAdapterModule from '../../../packages/backend/convex/betterAuth/adapter';
+import * as betterAuthAuthModule from '../../../packages/backend/convex/betterAuth/auth';
+import * as betterAuthGeneratedApiModule from '../../../packages/backend/convex/betterAuth/_generated/api';
+import * as betterAuthGeneratedComponentModule from '../../../packages/backend/convex/betterAuth/_generated/component';
+import * as betterAuthGeneratedDataModelModule from '../../../packages/backend/convex/betterAuth/_generated/dataModel';
+import * as betterAuthGeneratedServerModule from '../../../packages/backend/convex/betterAuth/_generated/server';
+import * as betterAuthSchemaModule from '../../../packages/backend/convex/betterAuth/schema';
+import betterAuthSchema from '../../../packages/backend/convex/betterAuth/schema';
+import schema from '../../../packages/backend/convex/schema';
 
 const modules = {
-  '../convex/analytics.ts': () => Promise.resolve(analyticsModule),
-  '../convex/auth.config.ts': () => Promise.resolve(authConfigModule),
-  '../convex/auth.ts': () => Promise.resolve(authModule),
-  '../convex/authOptions.ts': () => Promise.resolve(authOptionsModule),
-  '../convex/domain.ts': () => Promise.resolve(domainModule),
-  '../convex/http.ts': () => Promise.resolve(httpModule),
-  '../convex/migrations.ts': () => Promise.resolve(migrationsModule),
-  '../convex/months.ts': () => Promise.resolve(monthsModule),
-  '../convex/orderCategories.ts': () => Promise.resolve(orderCategoriesModule),
-  '../convex/orders.ts': () => Promise.resolve(ordersModule),
-  '../convex/productCatalog.ts': () => Promise.resolve(productCatalogModule),
-  '../convex/products.ts': () => Promise.resolve(productsModule),
-  '../convex/scan.ts': () => Promise.resolve(scanModule),
-  '../convex/schema.ts': () => Promise.resolve(schemaModule),
-  '../convex/_generated/api.js': () => Promise.resolve(generatedApiModule),
-  '../convex/_generated/server.js': () => Promise.resolve(generatedServerModule),
+  '../../../packages/backend/convex/analytics.ts': () => Promise.resolve(analyticsModule),
+  '../../../packages/backend/convex/auth.config.ts': () => Promise.resolve(authConfigModule),
+  '../../../packages/backend/convex/auth.ts': () => Promise.resolve(authModule),
+  '../../../packages/backend/convex/authOptions.ts': () => Promise.resolve(authOptionsModule),
+  '../../../packages/backend/convex/domain.ts': () => Promise.resolve(domainModule),
+  '../../../packages/backend/convex/http.ts': () => Promise.resolve(httpModule),
+  '../../../packages/backend/convex/migrations.ts': () => Promise.resolve(migrationsModule),
+  '../../../packages/backend/convex/months.ts': () => Promise.resolve(monthsModule),
+  '../../../packages/backend/convex/orderCategories.ts': () =>
+    Promise.resolve(orderCategoriesModule),
+  '../../../packages/backend/convex/orders.ts': () => Promise.resolve(ordersModule),
+  '../../../packages/backend/convex/productCatalog.ts': () => Promise.resolve(productCatalogModule),
+  '../../../packages/backend/convex/products.ts': () => Promise.resolve(productsModule),
+  '../../../packages/backend/convex/scan.ts': () => Promise.resolve(scanModule),
+  '../../../packages/backend/convex/schema.ts': () => Promise.resolve(schemaModule),
+  '../../../packages/backend/convex/_generated/api.js': () => Promise.resolve(generatedApiModule),
+  '../../../packages/backend/convex/_generated/server.js': () =>
+    Promise.resolve(generatedServerModule),
 };
 
 const betterAuthModules = {
-  '../convex/betterAuth/adapter.ts': () => Promise.resolve(betterAuthAdapterModule),
-  '../convex/betterAuth/auth.ts': () => Promise.resolve(betterAuthAuthModule),
-  '../convex/betterAuth/schema.ts': () => Promise.resolve(betterAuthSchemaModule),
-  '../convex/betterAuth/_generated/api.ts': () => Promise.resolve(betterAuthGeneratedApiModule),
-  '../convex/betterAuth/_generated/component.ts': () =>
+  '../../../packages/backend/convex/betterAuth/adapter.ts': () =>
+    Promise.resolve(betterAuthAdapterModule),
+  '../../../packages/backend/convex/betterAuth/auth.ts': () =>
+    Promise.resolve(betterAuthAuthModule),
+  '../../../packages/backend/convex/betterAuth/schema.ts': () =>
+    Promise.resolve(betterAuthSchemaModule),
+  '../../../packages/backend/convex/betterAuth/_generated/api.ts': () =>
+    Promise.resolve(betterAuthGeneratedApiModule),
+  '../../../packages/backend/convex/betterAuth/_generated/component.ts': () =>
     Promise.resolve(betterAuthGeneratedComponentModule),
-  '../convex/betterAuth/_generated/dataModel.ts': () =>
+  '../../../packages/backend/convex/betterAuth/_generated/dataModel.ts': () =>
     Promise.resolve(betterAuthGeneratedDataModelModule),
-  '../convex/betterAuth/_generated/server.ts': () =>
+  '../../../packages/backend/convex/betterAuth/_generated/server.ts': () =>
     Promise.resolve(betterAuthGeneratedServerModule),
 };
 

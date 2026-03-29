@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "dangerouslyDisablePackageManagerCheck": true,
+  "tasks": {
+    "dev": {
+      "persistent": true,
+      "cache": false
+    },
+    "lint": {
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": []
+    },
+    "format": {
+      "cache": false
+    },
+    "convex:dev": {
+      "dependsOn": ["^convex:dev"],
+      "persistent": true,
+      "cache": false
+    },
+    "convex:deploy": {
+      "dependsOn": ["^convex:deploy"],
+      "cache": false
+    }
+  }
+}

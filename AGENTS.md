@@ -31,7 +31,7 @@ test("hello world", () => {
 
 ## Review
 
-- Always run `cr --plain` to review the changes you make.
+- Always run `cr --prompt-only -t uncommitted` to review the changes you make. If this gives and error then run the /review command and review your changes.
 
 ## Type Safety
 

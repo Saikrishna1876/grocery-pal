@@ -70,21 +70,21 @@ export default function Dashboard() {
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="border-b border-border px-5 pb-4 pt-14">
+    <View className="bg-background flex-1">
+      <View className="border-border border-b px-5 pb-4 pt-14">
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1">
-            <Text className="text-2xl font-bold text-foreground">Grocery Pal</Text>
-            <Text className="mt-1 text-sm text-muted-foreground">
+            <Text className="text-foreground text-2xl font-bold">Grocery Pal</Text>
+            <Text className="text-muted-foreground mt-1 text-sm">
               Monthly Grocery Expense Manager
             </Text>
           </View>
           <TouchableOpacity
             disabled={signingOut}
             onPress={handleSignOut}
-            className="flex-row items-center gap-2 rounded-full border border-border px-3 py-2">
+            className="border-border flex-row items-center gap-2 rounded-full border px-3 py-2">
             <LogOut size={16} color={iconColor} />
-            <Text className="text-xs font-medium text-foreground">
+            <Text className="text-foreground text-xs font-medium">
               {signingOut ? 'Signing out...' : 'Sign Out'}
             </Text>
           </TouchableOpacity>
@@ -97,26 +97,26 @@ export default function Dashboard() {
         ) : (
           <>
             {currentMonth && (
-              <View className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                <Text className="text-sm font-medium text-muted-foreground">
+              <View className="border-border bg-card mb-6 rounded-2xl border p-5 shadow-sm">
+                <Text className="text-muted-foreground text-sm font-medium">
                   {MONTH_NAMES[currentMonth.month]} {currentMonth.year}
                 </Text>
                 <View className="mt-2 flex-row items-end">
                   <IndianRupee size={24} color={iconColor} />
-                  <Text className="text-3xl font-bold text-foreground">
+                  <Text className="text-foreground text-3xl font-bold">
                     {currentMonth.total.toFixed(0)}
                   </Text>
                 </View>
                 <View className="mt-3 flex-row gap-5">
                   <View className="flex-row items-center gap-1.5">
                     <ShoppingCart size={14} color={mutedColor} />
-                    <Text className="text-xs text-muted-foreground">
+                    <Text className="text-muted-foreground text-xs">
                       {currentMonth.order_count} orders
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1.5">
                     <CalendarDays size={14} color={mutedColor} />
-                    <Text className="text-xs text-muted-foreground">
+                    <Text className="text-muted-foreground text-xs">
                       {currentMonth.item_count} items
                     </Text>
                   </View>
@@ -142,23 +142,23 @@ export default function Dashboard() {
             <View className="mb-6 flex-row gap-3">
               <TouchableOpacity
                 onPress={createCurrentMonth}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5">
+                className="bg-primary flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5">
                 <Plus size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
-                <Text className="font-semibold text-primary-foreground">New Month</Text>
+                <Text className="text-primary-foreground font-semibold">New Month</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/custom-content' as Href)}
-                className="flex-row items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5">
+                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5">
                 <Tag size={18} color={iconColor} />
-                <Text className="font-semibold text-foreground">Custom Content</Text>
+                <Text className="text-foreground font-semibold">Custom Content</Text>
               </TouchableOpacity>
             </View>
 
-            <Text className="mb-3 text-lg font-semibold text-foreground">All Months</Text>
+            <Text className="text-foreground mb-3 text-lg font-semibold">All Months</Text>
             {months.length === 0 ? (
               <View className="items-center py-10">
                 <CalendarDays size={40} color={mutedColor} />
-                <Text className="mt-3 text-center text-muted-foreground">
+                <Text className="text-muted-foreground mt-3 text-center">
                   No months yet. Create one to start tracking!
                 </Text>
               </View>
@@ -175,17 +175,17 @@ export default function Dashboard() {
                       },
                     })
                   }
-                  className="mb-2 flex-row items-center justify-between rounded-xl border border-border bg-card p-4">
+                  className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-foreground">
+                    <Text className="text-foreground text-base font-semibold">
                       {MONTH_NAMES[month.month]} {month.year}
                     </Text>
-                    <Text className="mt-0.5 text-xs text-muted-foreground">
+                    <Text className="text-muted-foreground mt-0.5 text-xs">
                       {month.order_count} orders · {month.item_count} items
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-2">
-                    <Text className="text-lg font-bold text-foreground">
+                    <Text className="text-foreground text-lg font-bold">
                       ₹{month.total.toFixed(0)}
                     </Text>
                     <ChevronRight size={18} color={mutedColor} />

@@ -1,15 +1,29 @@
-# grocery-pal
+# Grocery Pal Workspace
 
-To install dependencies:
+This repository is now a Turborepo workspace.
+
+## Structure
+
+- `apps/mobile` - Expo React Native app
+- `packages/backend` - Convex backend workspace (`convex` sources under `packages/backend/convex`)
+
+## Setup
 
 ```bash
 bun install
 ```
 
-To run:
+## Common commands
 
 ```bash
-bun run expo-router/entry
-```
+# Start Expo app
+bun run dev
 
-This project was created using `bun init` in bun v1.3.1. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+# Run all checks in the mobile app with Turborepo
+bun run turbo:check
+
+# Run tasks individually through Turborepo
+bun run turbo:lint
+bun run turbo:typecheck
+bun run turbo:test
+```

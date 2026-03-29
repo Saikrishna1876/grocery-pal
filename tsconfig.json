@@ -1,5 +1,4 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
@@ -10,5 +9,11 @@
       "@/*": ["*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
+  "include": ["apps/mobile/**/*.ts", "apps/mobile/**/*.tsx", "packages/backend/**/*.ts"],
+  "exclude": [
+    "**/node_modules",
+    "apps/mobile/tests",
+    "packages/backend/convex/_generated",
+    "packages/backend/convex/betterAuth/_generated"
+  ]
 }

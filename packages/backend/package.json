@@ -1,0 +1,19 @@
+{
+  "name": "@grocery-pal/backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@better-auth/expo": "1.4.21",
+    "@convex-dev/better-auth": "0.10.13",
+    "better-auth": "1.4.21",
+    "convex": "^1.32.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["*"]
+    }
+  },
+  "include": ["convex/**/*.ts", "convex/**/*.tsx"],
+  "exclude": ["convex/_generated", "convex/betterAuth/_generated"]
+}
