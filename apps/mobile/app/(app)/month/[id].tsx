@@ -130,7 +130,6 @@ export default function MonthDetail() {
             </TouchableOpacity>
             <View className="flex-1">
               <Text className="text-foreground text-xl font-bold">{title}</Text>
-              <Text className="text-muted-foreground text-xs">Monthly expense details</Text>
             </View>
           </View>
           <TouchableOpacity

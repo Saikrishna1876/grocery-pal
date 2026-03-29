@@ -24,7 +24,6 @@ export default function CustomContentScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-foreground">Custom Content</Text>
-            <Text className="text-xs text-muted-foreground">Reusable data for your workspace</Text>
           </View>
         </View>
       </View>

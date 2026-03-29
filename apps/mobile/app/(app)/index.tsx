@@ -5,18 +5,17 @@ import {
   Camera,
   ChevronRight,
   IndianRupee,
-  LogOut,
   Plus,
   ShoppingCart,
   Tag,
   TrendingDown,
   TrendingUp,
+  User,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { api } from '@/convex/_generated/api';
-import { signOut } from '@/lib/auth/client';
 import { MONTH_NAMES } from '@/lib/months';
 
 type MonthSummary = {
@@ -32,7 +31,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [signingOut, setSigningOut] = React.useState(false);
+  const [showAddOptions, setShowAddOptions] = React.useState(false);
   const monthsResult = useQuery(api.months.get);
   const createMonth = useMutation(api.months.add);
 
@@ -61,16 +60,43 @@ export default function Dashboard() {
   const mutedColor = isDark ? '#a3a3a3' : '#737373';
   const greenColor = '#22c55e';
   const redColor = '#ef4444';
+  const addButtonIconColor = currentMonth ? (isDark ? '#0a0a0a' : '#fafafa') : mutedColor;
 
-  const handleSignOut = async () => {
-    setSigningOut(true);
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Failed to sign out:', error);
-    } finally {
-      setSigningOut(false);
+  const openAddOptions = () => {
+    if (!currentMonth) {
+      return;
     }
+
+    setShowAddOptions(true);
+  };
+
+  const handleAddScan = () => {
+    if (!currentMonth) {
+      return;
+    }
+
+    setShowAddOptions(false);
+    router.push({
+      pathname: '/order/scan',
+      params: { monthId: currentMonth._id, monthTitle: currentMonthTitle },
+    });
+  };
+
+  const handleAddManual = () => {
+    if (!currentMonth) {
+      return;
+    }
+
+    setShowAddOptions(false);
+    router.push({
+      pathname: '/order/review',
+      params: {
+        monthId: currentMonth._id,
+        monthTitle: currentMonthTitle,
+        items: '[]',
+        source: 'manual',
+      },
+    });
   };
 
   return (
@@ -80,16 +106,6 @@ export default function Dashboard() {
           <View className="flex-1">
             <Text className="text-foreground text-2xl font-bold">Grocery Pal</Text>
           </View>
-          <TouchableOpacity
-            disabled={signingOut}
-            onPress={handleSignOut}
-            className="border-border flex-row items-center gap-2 rounded-full border px-3 py-2"
-          >
-            <LogOut size={16} color={iconColor} />
-            <Text className="text-foreground text-xs font-medium">
-              {signingOut ? 'Signing out...' : 'Sign Out'}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -206,39 +222,27 @@ export default function Dashboard() {
       <View className="border-border bg-background border-t px-5 pb-8 pt-3">
         <View className="flex-row gap-3">
           <TouchableOpacity
+            onPress={() => router.push('/profile' as Href)}
+            className="border-border bg-card flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
+          >
+            <User size={18} color={iconColor} />
+            <Text className="text-foreground font-semibold">Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             disabled={!currentMonth}
-            onPress={() =>
-              currentMonth &&
-              router.push({
-                pathname: '/order/scan',
-                params: { monthId: currentMonth._id, monthTitle: currentMonthTitle },
-              })
-            }
+            onPress={openAddOptions}
             className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
               currentMonth ? 'bg-primary' : 'bg-secondary'
             }`}
           >
-            <Camera size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
-            <Text className="text-primary-foreground font-semibold">Scan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            disabled={!currentMonth}
-            onPress={() =>
-              currentMonth &&
-              router.push({
-                pathname: '/order/review',
-                params: {
-                  monthId: currentMonth._id,
-                  monthTitle: currentMonthTitle,
-                  items: '[]',
-                  source: 'manual',
-                },
-              })
-            }
-            className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-5 py-3.5"
-          >
-            <Plus size={18} color={iconColor} />
-            <Text className="text-foreground font-semibold">Manual</Text>
+            <Plus size={18} color={addButtonIconColor} />
+            <Text
+              className={`font-semibold ${
+                currentMonth ? 'text-primary-foreground' : 'text-muted-foreground'
+              }`}
+            >
+              Add
+            </Text>
           </TouchableOpacity>
         </View>
         {!currentMonth && (
@@ -247,6 +251,50 @@ export default function Dashboard() {
           </Text>
         )}
       </View>
+
+      <Modal
+        visible={showAddOptions}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddOptions(false)}
+      >
+        <View className="flex-1 justify-end">
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setShowAddOptions(false)}
+            className="flex-1 bg-black/40"
+          />
+          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+            <Text className="text-foreground text-lg font-semibold">Add Order</Text>
+            <Text className="text-muted-foreground mt-1 text-sm">{currentMonthTitle ?? ''}</Text>
+
+            <View className="mt-5 gap-3">
+              <TouchableOpacity
+                onPress={handleAddScan}
+                className="bg-primary flex-row items-center justify-center gap-2 rounded-xl py-4"
+              >
+                <Camera size={20} color={isDark ? '#0a0a0a' : '#fafafa'} />
+                <Text className="text-primary-foreground text-base font-semibold">Scan Items</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleAddManual}
+                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-4"
+              >
+                <Plus size={20} color={iconColor} />
+                <Text className="text-foreground text-base font-semibold">Add Manually</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowAddOptions(false)}
+                className="bg-secondary rounded-xl py-3"
+              >
+                <Text className="text-foreground text-center font-medium">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

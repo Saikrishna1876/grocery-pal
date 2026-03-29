@@ -1,16 +1,17 @@
 import '@/global.css';
 
-import { authBaseUrl, authClient, useSession } from '@/lib/auth/client';
-import { resolveRuntimeUrl } from '@/lib/runtime-url';
-import { NAV_THEME } from '@/lib/theme';
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
-import { ConvexReactClient } from 'convex/react';
 import { ThemeProvider } from '@react-navigation/native';
+import { ConvexReactClient } from 'convex/react';
 import { type Href, Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Platform, Text, View } from 'react-native';
+import { authBaseUrl, authClient, useSession } from '@/lib/auth/client';
+import { resolveRuntimeUrl } from '@/lib/runtime-url';
+import { NAV_THEME } from '@/lib/theme';
+import { ThemePreferenceProvider } from '@/lib/theme-preference';
 
 const convexUrl = resolveRuntimeUrl(process.env.EXPO_PUBLIC_CONVEX_URL);
 
@@ -46,11 +47,12 @@ function LoadingScreen() {
   const isDark = colorScheme === 'dark';
 
   return (
-    <View className="flex-1 items-center justify-center bg-background px-6">
-      <Text className="text-lg font-semibold text-foreground">Grocery Pal</Text>
+    <View className="bg-background flex-1 items-center justify-center px-6">
+      <Text className="text-foreground text-lg font-semibold">Grocery Pal</Text>
       <Text
-        className="mt-2 text-center text-sm text-muted-foreground"
-        style={{ color: isDark ? '#a3a3a3' : '#737373' }}>
+        className="text-muted-foreground mt-2 text-center text-sm"
+        style={{ color: isDark ? '#a3a3a3' : '#737373' }}
+      >
         Loading your secure workspace...
       </Text>
     </View>
@@ -59,9 +61,9 @@ function LoadingScreen() {
 
 function UnsupportedPlatformScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-background px-6">
-      <Text className="text-lg font-semibold text-foreground">Native only</Text>
-      <Text className="mt-2 text-center text-sm text-muted-foreground">
+    <View className="bg-background flex-1 items-center justify-center px-6">
+      <Text className="text-foreground text-lg font-semibold">Native only</Text>
+      <Text className="text-muted-foreground mt-2 text-center text-sm">
         Better Auth is configured for iOS and Android in this phase. Open the app in a native
         simulator or device.
       </Text>
@@ -120,11 +122,13 @@ export default function RootLayout() {
 
   return (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-        <DevNetworkDiagnostics />
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <RootNavigator />
-      </ThemeProvider>
+      <ThemePreferenceProvider>
+        <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+          <DevNetworkDiagnostics />
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          <RootNavigator />
+        </ThemeProvider>
+      </ThemePreferenceProvider>
     </ConvexBetterAuthProvider>
   );
 }
