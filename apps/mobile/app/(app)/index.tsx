@@ -1,10 +1,8 @@
-import { api } from '@/convex/_generated/api';
-import { signOut } from '@/lib/auth/client';
-import { MONTH_NAMES } from '@/lib/months';
 import { useMutation, useQuery } from 'convex/react';
 import { type Href, useRouter } from 'expo-router';
 import {
   CalendarDays,
+  Camera,
   ChevronRight,
   IndianRupee,
   LogOut,
@@ -17,6 +15,9 @@ import {
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { api } from '@/convex/_generated/api';
+import { signOut } from '@/lib/auth/client';
+import { MONTH_NAMES } from '@/lib/months';
 
 type MonthSummary = {
   _id: string;
@@ -50,6 +51,9 @@ export default function Dashboard() {
   const months = (monthsResult ?? []) as MonthSummary[];
   const currentMonth = months[0];
   const previousMonth = months[1];
+  const currentMonthTitle = currentMonth
+    ? `${MONTH_NAMES[currentMonth.month]} ${currentMonth.year}`
+    : undefined;
   const trend = currentMonth && previousMonth ? currentMonth.total - previousMonth.total : null;
   const loading = monthsResult === undefined;
 
@@ -75,14 +79,12 @@ export default function Dashboard() {
         <View className="flex-row items-start justify-between gap-4">
           <View className="flex-1">
             <Text className="text-foreground text-2xl font-bold">Grocery Pal</Text>
-            <Text className="text-muted-foreground mt-1 text-sm">
-              Monthly Grocery Expense Manager
-            </Text>
           </View>
           <TouchableOpacity
             disabled={signingOut}
             onPress={handleSignOut}
-            className="border-border flex-row items-center gap-2 rounded-full border px-3 py-2">
+            className="border-border flex-row items-center gap-2 rounded-full border px-3 py-2"
+          >
             <LogOut size={16} color={iconColor} />
             <Text className="text-foreground text-xs font-medium">
               {signingOut ? 'Signing out...' : 'Sign Out'}
@@ -91,7 +93,7 @@ export default function Dashboard() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 172 }}>
         {loading ? (
           <ActivityIndicator size="large" className="mt-20" />
         ) : (
@@ -129,7 +131,8 @@ export default function Dashboard() {
                       )}
                       <Text
                         style={{ color: trend > 0 ? redColor : greenColor }}
-                        className="text-xs font-medium">
+                        className="text-xs font-medium"
+                      >
                         {trend > 0 ? '+' : ''}
                         {trend.toFixed(0)} vs last month
                       </Text>
@@ -142,13 +145,15 @@ export default function Dashboard() {
             <View className="mb-6 flex-row gap-3">
               <TouchableOpacity
                 onPress={createCurrentMonth}
-                className="bg-primary flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5">
+                className="bg-primary flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5"
+              >
                 <Plus size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
                 <Text className="text-primary-foreground font-semibold">New Month</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/custom-content' as Href)}
-                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5">
+                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5"
+              >
                 <Tag size={18} color={iconColor} />
                 <Text className="text-foreground font-semibold">Custom Content</Text>
               </TouchableOpacity>
@@ -175,7 +180,8 @@ export default function Dashboard() {
                       },
                     })
                   }
-                  className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
+                  className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4"
+                >
                   <View className="flex-1">
                     <Text className="text-foreground text-base font-semibold">
                       {MONTH_NAMES[month.month]} {month.year}
@@ -196,6 +202,51 @@ export default function Dashboard() {
           </>
         )}
       </ScrollView>
+
+      <View className="border-border bg-background border-t px-5 pb-8 pt-3">
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            disabled={!currentMonth}
+            onPress={() =>
+              currentMonth &&
+              router.push({
+                pathname: '/order/scan',
+                params: { monthId: currentMonth._id, monthTitle: currentMonthTitle },
+              })
+            }
+            className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
+              currentMonth ? 'bg-primary' : 'bg-secondary'
+            }`}
+          >
+            <Camera size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
+            <Text className="text-primary-foreground font-semibold">Scan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            disabled={!currentMonth}
+            onPress={() =>
+              currentMonth &&
+              router.push({
+                pathname: '/order/review',
+                params: {
+                  monthId: currentMonth._id,
+                  monthTitle: currentMonthTitle,
+                  items: '[]',
+                  source: 'manual',
+                },
+              })
+            }
+            className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-5 py-3.5"
+          >
+            <Plus size={18} color={iconColor} />
+            <Text className="text-foreground font-semibold">Manual</Text>
+          </TouchableOpacity>
+        </View>
+        {!currentMonth && (
+          <Text className="text-muted-foreground mt-2 text-center text-xs">
+            Create a month to add orders.
+          </Text>
+        )}
+      </View>
     </View>
   );
 }
