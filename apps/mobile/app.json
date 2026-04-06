@@ -4,7 +4,7 @@
     "slug": "grocery-pal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.jpg",
+    "icon": "./assets/images/icon.png",
     "scheme": "app",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -27,7 +27,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.jpg"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": ["expo-router", "expo-secure-store", "expo-web-browser"],
     "experiments": {
