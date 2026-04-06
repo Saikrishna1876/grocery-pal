@@ -1,5 +1,5 @@
 import { type Href, useRouter } from 'expo-router';
-import { ArrowLeft, Box, ChevronRight, Tags } from 'lucide-react-native';
+import { ArrowLeft, Box, ChevronRight, Tags, Users } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -11,8 +11,8 @@ export default function CustomContentScreen() {
   const mutedColor = isDark ? '#a3a3a3' : '#737373';
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="border-b border-border px-5 pb-4 pt-14">
+    <View className="bg-background flex-1">
+      <View className="border-border border-b px-5 pb-4 pt-14">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -23,22 +23,22 @@ export default function CustomContentScreen() {
             <ArrowLeft size={22} color={iconColor} />
           </TouchableOpacity>
           <View>
-            <Text className="text-xl font-bold text-foreground">Custom Content</Text>
+            <Text className="text-foreground text-xl font-bold">Custom Content</Text>
           </View>
         </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <Text className="mb-3 text-lg font-semibold text-foreground">Content</Text>
+        <Text className="text-foreground mb-3 text-lg font-semibold">Content</Text>
 
         <TouchableOpacity
           onPress={() => router.push('/custom-content/categories' as Href)}
-          className="mb-2 flex-row items-center justify-between rounded-xl border border-border bg-card p-4">
+          className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
           <View className="flex-1 flex-row items-center gap-3">
             <Tags size={18} color={iconColor} />
             <View className="flex-1">
-              <Text className="text-base font-semibold text-foreground">Order Categories</Text>
-              <Text className="mt-0.5 text-xs text-muted-foreground">
+              <Text className="text-foreground text-base font-semibold">Order Categories</Text>
+              <Text className="text-muted-foreground mt-0.5 text-xs">
                 Manage labels used for each order
               </Text>
             </View>
@@ -46,12 +46,27 @@ export default function CustomContentScreen() {
           <ChevronRight size={18} color={mutedColor} />
         </TouchableOpacity>
 
-        <View className="mb-2 flex-row items-center justify-between rounded-xl border border-border bg-card p-4 opacity-70">
+        <TouchableOpacity
+          onPress={() => router.push('/shared' as Href)}
+          className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
+          <View className="flex-1 flex-row items-center gap-3">
+            <Users size={18} color={iconColor} />
+            <View className="flex-1">
+              <Text className="text-foreground text-base font-semibold">Shared Lists</Text>
+              <Text className="text-muted-foreground mt-0.5 text-xs">
+                Collaborate with family or friends on one list
+              </Text>
+            </View>
+          </View>
+          <ChevronRight size={18} color={mutedColor} />
+        </TouchableOpacity>
+
+        <View className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4 opacity-70">
           <View className="flex-1 flex-row items-center gap-3">
             <Box size={18} color={iconColor} />
             <View className="flex-1">
-              <Text className="text-base font-semibold text-foreground">Products</Text>
-              <Text className="mt-0.5 text-xs text-muted-foreground">Coming soon</Text>
+              <Text className="text-foreground text-base font-semibold">Products</Text>
+              <Text className="text-muted-foreground mt-0.5 text-xs">Coming soon</Text>
             </View>
           </View>
         </View>

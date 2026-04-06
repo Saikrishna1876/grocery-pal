@@ -2,13 +2,24 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@/*": ["*"]
+      "@/*": [
+        "*"
+      ]
     }
   },
-  "include": ["convex/**/*.ts", "convex/**/*.tsx"],
-  "exclude": ["convex/_generated", "convex/betterAuth/_generated"]
+  "include": [
+    "convex/**/*.ts",
+    "convex/**/*.tsx"
+  ],
+  "exclude": [
+    "convex/_generated",
+    "convex/betterAuth/_generated"
+  ]
 }

@@ -47,4 +47,61 @@ export default defineSchema({
     unit: v.string(),
     price: v.number(),
   }).index('by_order_id', ['order_id']),
+  shared_lists: defineTable({
+    owner_id: v.string(),
+    name: v.string(),
+    notes: v.optional(v.string()),
+    created_at: v.number(),
+    updated_at: v.number(),
+    deleted_at: v.optional(v.number()),
+    converted_order_id: v.optional(v.id('orders')),
+    converted_at: v.optional(v.number()),
+  })
+    .index('by_owner_id', ['owner_id'])
+    .index('by_owner_updated_at', ['owner_id', 'updated_at']),
+  shared_list_members: defineTable({
+    list_id: v.id('shared_lists'),
+    user_id: v.string(),
+    role: v.union(v.literal('owner'), v.literal('editor')),
+    added_by: v.string(),
+    created_at: v.number(),
+  })
+    .index('by_list_id', ['list_id'])
+    .index('by_user_id', ['user_id'])
+    .index('by_list_user', ['list_id', 'user_id']),
+  shared_list_items: defineTable({
+    list_id: v.id('shared_lists'),
+    name: v.string(),
+    quantity: v.number(),
+    unit: v.string(),
+    price: v.number(),
+    completed: v.boolean(),
+    completed_at: v.optional(v.number()),
+    created_by: v.string(),
+    updated_by: v.string(),
+    created_at: v.number(),
+    updated_at: v.number(),
+    deleted_at: v.optional(v.number()),
+    deleted_by: v.optional(v.string()),
+  }).index('by_list_id', ['list_id']),
+  shared_list_invites: defineTable({
+    list_id: v.id('shared_lists'),
+    email: v.optional(v.string()),
+    token: v.string(),
+    created_by: v.string(),
+    created_at: v.number(),
+    expires_at: v.number(),
+    accepted_at: v.optional(v.number()),
+    revoked_at: v.optional(v.number()),
+  })
+    .index('by_list_id', ['list_id'])
+    .index('by_token', ['token']),
+  shared_list_activity_events: defineTable({
+    list_id: v.id('shared_lists'),
+    actor_user_id: v.string(),
+    event_type: v.string(),
+    item_id: v.optional(v.id('shared_list_items')),
+    metadata: v.optional(v.string()),
+    created_at: v.number(),
+  }).index('by_list_created_at', ['list_id', 'created_at']),
 });

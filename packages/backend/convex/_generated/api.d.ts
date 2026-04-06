@@ -20,6 +20,7 @@ import type * as orders from "../orders.js";
 import type * as productCatalog from "../productCatalog.js";
 import type * as products from "../products.js";
 import type * as scan from "../scan.js";
+import type * as sharedLists from "../sharedLists.js";
 
 import type {
   ApiFromModules,
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   productCatalog: typeof productCatalog;
   products: typeof products;
   scan: typeof scan;
+  sharedLists: typeof sharedLists;
 }>;
 
 /**

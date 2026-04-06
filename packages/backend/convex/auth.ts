@@ -1,19 +1,25 @@
 import { createClient } from '@convex-dev/better-auth';
-import type { GenericCtx } from '@convex-dev/better-auth/utils';
 import { betterAuth } from 'better-auth';
 import { ConvexError } from 'convex/values';
 
 import { components, internal } from './_generated/api';
 import type { DataModel } from './_generated/dataModel';
-import { internalMutation } from './_generated/server';
+import { internalMutation, type MutationCtx } from './_generated/server';
 import { buildAuthOptions } from './authOptions';
-import schema from './betterAuth/schema';
 
-type AuthCtx = GenericCtx<DataModel>;
+export const authComponent = createClient<DataModel>(components.betterAuth);
 
-export const authComponent = createClient<DataModel>(components.betterAuth, {
-  local: { schema },
-});
+type AuthAdapterCtx = Parameters<typeof authComponent.adapter>[0];
+type AuthUserCtx = Parameters<typeof authComponent.getAuthUser>[0];
+type CtxWithRunMutation = Pick<MutationCtx, 'runMutation'>;
+
+function hasRunMutation(ctx: unknown): ctx is CtxWithRunMutation {
+  if (typeof ctx !== 'object' || ctx === null || !('runMutation' in ctx)) {
+    return false;
+  }
+
+  return typeof (ctx as { runMutation?: unknown }).runMutation === 'function';
+}
 
 function getBetterAuthSecret() {
   const secret = process.env.BETTER_AUTH_SECRET;
@@ -37,22 +43,22 @@ function getBetterAuthBaseUrl() {
   return baseUrl;
 }
 
-export const createAuthOptions = (_ctx: AuthCtx) =>
+export const createAuthOptions = () =>
   buildAuthOptions({
     secret: getBetterAuthSecret(),
     baseURL: getBetterAuthBaseUrl(),
     jwks: process.env.JWKS,
   });
 
-export const createAuth = (ctx: AuthCtx) =>
+export const createAuth = <TCtx>(ctx: TCtx) =>
   betterAuth({
-    ...createAuthOptions(ctx),
-    database: authComponent.adapter(ctx),
+    ...createAuthOptions(),
+    database: authComponent.adapter(ctx as AuthAdapterCtx),
     databaseHooks: {
       user: {
         create: {
           after: async (authUser) => {
-            if (!('runMutation' in ctx)) {
+            if (!hasRunMutation(ctx)) {
               return;
             }
 
@@ -67,9 +73,9 @@ export const createAuth = (ctx: AuthCtx) =>
 
 export const { getAuthUser } = authComponent.clientApi();
 
-export async function requireCurrentUser(ctx: AuthCtx) {
+export async function requireCurrentUser<TCtx>(ctx: TCtx) {
   try {
-    return await authComponent.getAuthUser(ctx);
+    return await authComponent.getAuthUser(ctx as AuthUserCtx);
   } catch (error) {
     if (error instanceof ConvexError && error.data === 'Unauthenticated') {
       throw error;

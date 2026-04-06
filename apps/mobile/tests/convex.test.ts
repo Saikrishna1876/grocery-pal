@@ -20,6 +20,7 @@ import * as productCatalogModule from '../../../packages/backend/convex/productC
 import * as productsModule from '../../../packages/backend/convex/products';
 import * as scanModule from '../../../packages/backend/convex/scan';
 import * as schemaModule from '../../../packages/backend/convex/schema';
+import * as sharedListsModule from '../../../packages/backend/convex/sharedLists';
 import * as betterAuthAdapterModule from '../../../packages/backend/convex/betterAuth/adapter';
 import * as betterAuthAuthModule from '../../../packages/backend/convex/betterAuth/auth';
 import * as betterAuthGeneratedApiModule from '../../../packages/backend/convex/betterAuth/_generated/api';
@@ -45,6 +46,7 @@ const modules = {
   '../../../packages/backend/convex/productCatalog.ts': () => Promise.resolve(productCatalogModule),
   '../../../packages/backend/convex/products.ts': () => Promise.resolve(productsModule),
   '../../../packages/backend/convex/scan.ts': () => Promise.resolve(scanModule),
+  '../../../packages/backend/convex/sharedLists.ts': () => Promise.resolve(sharedListsModule),
   '../../../packages/backend/convex/schema.ts': () => Promise.resolve(schemaModule),
   '../../../packages/backend/convex/_generated/api.js': () => Promise.resolve(generatedApiModule),
   '../../../packages/backend/convex/_generated/server.js': () =>
@@ -639,5 +641,160 @@ describe('Convex backend auth + ownership', () => {
     await expect(
       user.auth.action(api.scan.processImage, { image: 'ZmFrZQ==', type: 'receipt' })
     ).rejects.toThrow('GEMINI_API_KEY is not configured.');
+  });
+
+  test('shared list members can collaboratively add, update, complete, and remove items', async () => {
+    const t = createBackend();
+    const owner = await createAuthenticatedUser(t, 'collab-owner@example.com', 'Collab Owner');
+    const editor = await createAuthenticatedUser(t, 'collab-editor@example.com', 'Collab Editor');
+
+    const list = await owner.auth.mutation(api.sharedLists.create, {
+      name: 'Weekend Groceries',
+      notes: 'Shared run',
+    });
+
+    const invite = await owner.auth.mutation(api.sharedLists.shareWithEmail, {
+      list_id: list!._id,
+      email: 'collab-editor@example.com',
+    });
+
+    await editor.auth.mutation(api.sharedLists.acceptInvite, {
+      token: invite!.token,
+    });
+
+    const createdItem = await owner.auth.mutation(api.sharedLists.addItem, {
+      list_id: list!._id,
+      item: {
+        name: 'Milk',
+        quantity: 2,
+        unit: 'ltr',
+        price: 60,
+      },
+    });
+
+    await editor.auth.mutation(api.sharedLists.updateItem, {
+      id: createdItem!._id,
+      item: {
+        name: 'Milk',
+        quantity: 3,
+        unit: 'ltr',
+        price: 58,
+      },
+    });
+
+    await owner.auth.mutation(api.sharedLists.toggleItemCompletion, {
+      id: createdItem!._id,
+      completed: true,
+      price: 59,
+    });
+
+    const detail = await editor.auth.query(api.sharedLists.getById, {
+      id: list!._id,
+    });
+
+    expect(detail.items).toHaveLength(1);
+    expect(detail.items[0]?.quantity).toBe(3);
+    expect(detail.items[0]?.price).toBe(59);
+    expect(detail.items[0]?.completed).toBe(true);
+
+    await editor.auth.mutation(api.sharedLists.removeItem, {
+      id: createdItem!._id,
+    });
+
+    const afterRemoval = await owner.auth.query(api.sharedLists.getById, {
+      id: list!._id,
+    });
+    expect(afterRemoval.items).toHaveLength(0);
+  });
+
+  test('owner can convert only fully completed shared list into an order', async () => {
+    const t = createBackend();
+    const owner = await createAuthenticatedUser(t, 'convert-owner@example.com', 'Convert Owner');
+    const editor = await createAuthenticatedUser(t, 'convert-editor@example.com', 'Convert Editor');
+
+    const categories = (await owner.auth.query(orderCategories.get, {})) as OrderCategory[];
+    const category = categories.find((entry) => entry.name === 'Friends');
+
+    const list = await owner.auth.mutation(api.sharedLists.create, {
+      name: 'Conversion List',
+      notes: 'Convert me',
+    });
+
+    const invite = await owner.auth.mutation(api.sharedLists.shareWithEmail, {
+      list_id: list!._id,
+      email: 'convert-editor@example.com',
+    });
+
+    await editor.auth.mutation(api.sharedLists.acceptInvite, {
+      token: invite!.token,
+    });
+
+    const apples = await owner.auth.mutation(api.sharedLists.addItem, {
+      list_id: list!._id,
+      item: {
+        name: 'Apples',
+        quantity: 2,
+        unit: 'kg',
+        price: 120,
+      },
+    });
+    const bread = await editor.auth.mutation(api.sharedLists.addItem, {
+      list_id: list!._id,
+      item: {
+        name: 'Bread',
+        quantity: 1,
+        unit: 'pack',
+        price: 45,
+      },
+    });
+
+    await owner.auth.mutation(api.sharedLists.toggleItemCompletion, {
+      id: apples!._id,
+      completed: true,
+    });
+
+    await expect(
+      owner.auth.mutation(api.sharedLists.convertToOrder, {
+        list_id: list!._id,
+        category_id: category!._id,
+      })
+    ).rejects.toThrow('Complete all items before converting the list to an order.');
+
+    await editor.auth.mutation(api.sharedLists.toggleItemCompletion, {
+      id: bread!._id,
+      completed: true,
+    });
+
+    await expect(
+      editor.auth.mutation(api.sharedLists.convertToOrder, {
+        list_id: list!._id,
+        category_id: category!._id,
+      })
+    ).rejects.toThrow('Only the owner can perform this action.');
+
+    const converted = await owner.auth.mutation(api.sharedLists.convertToOrder, {
+      list_id: list!._id,
+      category_id: category!._id,
+    });
+
+    const convertedOrder = await t.run(async (ctx) => ctx.db.get(converted.orderId));
+    const convertedItems = await t.run(async (ctx) =>
+      ctx.db
+        .query('order_items')
+        .withIndex('by_order_id', (q) => q.eq('order_id', converted.orderId))
+        .collect()
+    );
+
+    expect(convertedOrder?.source?.startsWith('shared-list:')).toBe(true);
+    expect(convertedItems).toHaveLength(2);
+    expect(convertedItems.some((item) => item.name === 'Apples')).toBe(true);
+    expect(convertedItems.some((item) => item.name === 'Bread')).toBe(true);
+
+    await expect(
+      owner.auth.mutation(api.sharedLists.convertToOrder, {
+        list_id: list!._id,
+        category_id: category!._id,
+      })
+    ).rejects.toThrow('List has already been converted to an order.');
   });
 });
