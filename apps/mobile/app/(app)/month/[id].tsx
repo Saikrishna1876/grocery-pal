@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
 
 type Order = {
@@ -46,20 +47,33 @@ export default function MonthDetail() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const monthId = id as Id<'months'> | undefined;
-  const ordersResult = useQuery(api.orders.getByMonth, monthId ? { monthId } : 'skip');
-  const categories = (useQuery(api.orderCategories.get) ?? []) as OrderCategory[];
+  const ordersLiveResult = useQuery(api.orders.getByMonth, monthId ? { monthId } : 'skip');
+  const categoriesLiveResult = useQuery(api.orderCategories.get);
+  const ordersState = useCachedQueryValue<Order[]>({
+    queryName: 'orders.getByMonth',
+    args: monthId ? { monthId } : undefined,
+    liveData: ordersLiveResult as Order[] | undefined,
+    loaderDelayMs: 900,
+  });
+  const categoriesState = useCachedQueryValue<OrderCategory[]>({
+    queryName: 'orderCategories.get',
+    liveData: categoriesLiveResult as OrderCategory[] | undefined,
+    loaderDelayMs: 900,
+  });
+  const categories = categoriesState.data ?? [];
   const removeOrder = useMutation(api.orders.remove);
   const updateOrderCategory = useMutation(api.orders.updateCategory);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [expandedCategoryOrderId, setExpandedCategoryOrderId] = React.useState<Id<'orders'> | null>(
-    null,
+    null
   );
   const [updatingCategoryOrderId, setUpdatingCategoryOrderId] = React.useState<Id<'orders'> | null>(
-    null,
+    null
   );
 
-  const orders = (ordersResult as Order[] | undefined) ?? [];
-  const loading = monthId ? ordersResult === undefined : false;
+  const orders = ordersState.data ?? [];
+  const showLoader = monthId ? ordersState.showLoader : false;
+  const waitingForFirstLoad = monthId ? ordersState.isInitialLoading && !showLoader : false;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
   const filteredOrders = React.useMemo(() => {
@@ -74,7 +88,7 @@ export default function MonthDetail() {
       const sourceMatch = (order.source ?? '').toLowerCase().includes(normalizedSearchQuery);
       const notesMatch = (order.notes ?? '').toLowerCase().includes(normalizedSearchQuery);
       const itemMatch = order.items.some((item) =>
-        item.name.toLowerCase().includes(normalizedSearchQuery),
+        item.name.toLowerCase().includes(normalizedSearchQuery)
       );
 
       return categoryMatch || sourceMatch || notesMatch || itemMatch;
@@ -110,7 +124,7 @@ export default function MonthDetail() {
     } catch (error: unknown) {
       Alert.alert(
         'Unable to change category',
-        getErrorMessage(error, 'Failed to update category.'),
+        getErrorMessage(error, 'Failed to update category.')
       );
     } finally {
       setUpdatingCategoryOrderId(null);
@@ -137,11 +151,10 @@ export default function MonthDetail() {
             onPress={() =>
               monthId &&
               router.push(
-                `/month/analytics?monthId=${encodeURIComponent(id)}&monthTitle=${encodeURIComponent(title ?? '')}` as Href,
+                `/month/analytics?monthId=${encodeURIComponent(id)}&monthTitle=${encodeURIComponent(title ?? '')}` as Href
               )
             }
-            className="border-border flex-row items-center gap-1.5 rounded-full border px-3 py-2"
-          >
+            className="border-border flex-row items-center gap-1.5 rounded-full border px-3 py-2">
             <BarChart3 size={16} color={iconColor} />
             <Text className="text-foreground text-xs font-medium">Analytics</Text>
           </TouchableOpacity>
@@ -149,8 +162,10 @@ export default function MonthDetail() {
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        {loading ? (
+        {showLoader ? (
           <ActivityIndicator size="large" className="mt-20" />
+        ) : waitingForFirstLoad ? (
+          <View className="mt-20" />
         ) : (
           <>
             <Text className="text-foreground mb-3 text-lg font-semibold">Orders</Text>
@@ -190,8 +205,7 @@ export default function MonthDetail() {
                 return (
                   <View
                     key={order._id}
-                    className="border-border bg-card mb-2 rounded-xl border p-4"
-                  >
+                    className="border-border bg-card mb-2 rounded-xl border p-4">
                     <View className="flex-row items-center justify-between">
                       <View className="flex-1">
                         <View className="flex-row items-center gap-2">
@@ -201,8 +215,7 @@ export default function MonthDetail() {
                           <TouchableOpacity
                             disabled={updatingThisOrder || categories.length === 0}
                             onPress={() => toggleOrderCategoryPicker(order._id)}
-                            className="bg-primary/10 rounded-full px-2 py-0.5"
-                          >
+                            className="bg-primary/10 rounded-full px-2 py-0.5">
                             <View className="flex-row items-center gap-1">
                               <Tag size={10} color={iconColor} />
                               <Text className="text-foreground text-xs">
@@ -223,8 +236,7 @@ export default function MonthDetail() {
                       </View>
                       <TouchableOpacity
                         onPress={() => deleteOrder(order._id)}
-                        className="rounded-full p-2"
-                      >
+                        className="rounded-full p-2">
                         <Trash2 size={16} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
@@ -234,8 +246,7 @@ export default function MonthDetail() {
                         <ScrollView
                           horizontal
                           showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={{ gap: 8, paddingRight: 8 }}
-                        >
+                          contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
                           {categories.map((category) => {
                             const isSelected = category._id === order.category_id;
                             return (
@@ -247,13 +258,11 @@ export default function MonthDetail() {
                                   isSelected
                                     ? 'border-primary bg-primary'
                                     : 'border-border bg-background'
-                                }`}
-                              >
+                                }`}>
                                 <Text
                                   className={`text-xs font-medium ${
                                     isSelected ? 'text-primary-foreground' : 'text-foreground'
-                                  }`}
-                                >
+                                  }`}>
                                   {category.name}
                                 </Text>
                               </TouchableOpacity>

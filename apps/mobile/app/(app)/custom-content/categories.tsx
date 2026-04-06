@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
@@ -7,6 +8,7 @@ import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -25,7 +27,15 @@ export default function OrderCategoriesScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const categories = (useQuery(api.orderCategories.get) ?? []) as OrderCategory[];
+  const categoriesLiveResult = useQuery(api.orderCategories.get);
+  const categoriesState = useCachedQueryValue<OrderCategory[]>({
+    queryName: 'orderCategories.get',
+    liveData: categoriesLiveResult as OrderCategory[] | undefined,
+    loaderDelayMs: 900,
+  });
+  const categories = categoriesState.data ?? [];
+  const showLoader = categoriesState.showLoader;
+  const waitingForFirstLoad = categoriesState.isInitialLoading && !showLoader;
   const addCategory = useMutation(api.orderCategories.add);
   const updateCategory = useMutation(api.orderCategories.update);
   const removeCategory = useMutation(api.orderCategories.remove);
@@ -99,8 +109,8 @@ export default function OrderCategoriesScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="border-b border-border px-5 pb-4 pt-14">
+    <View className="bg-background flex-1">
+      <View className="border-border border-b px-5 pb-4 pt-14">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -111,8 +121,8 @@ export default function OrderCategoriesScreen() {
             <ArrowLeft size={22} color={iconColor} />
           </TouchableOpacity>
           <View>
-            <Text className="text-xl font-bold text-foreground">Order Categories</Text>
-            <Text className="text-xs text-muted-foreground">Manage labels for each order</Text>
+            <Text className="text-foreground text-xl font-bold">Order Categories</Text>
+            <Text className="text-muted-foreground text-xs">Manage labels for each order</Text>
           </View>
         </View>
       </View>
@@ -121,11 +131,11 @@ export default function OrderCategoriesScreen() {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-          <Text className="mb-3 text-lg font-semibold text-foreground">Add Category</Text>
+          <Text className="text-foreground mb-3 text-lg font-semibold">Add Category</Text>
 
-          <View className="mb-3 rounded-xl border border-border bg-card px-3 py-2">
+          <View className="border-border bg-card mb-3 rounded-xl border px-3 py-2">
             <TextInput
-              className="py-1 text-sm text-foreground"
+              className="text-foreground py-1 text-sm"
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               placeholder="Birthday party, Trip crew, Visitors..."
@@ -150,103 +160,111 @@ export default function OrderCategoriesScreen() {
             </Text>
           </TouchableOpacity>
 
-          <Text className="mb-3 text-lg font-semibold text-foreground">Categories</Text>
+          <Text className="text-foreground mb-3 text-lg font-semibold">Categories</Text>
 
-          {categories.map((category) => {
-            const isEditing = editingId === category._id;
-            const isProtected = Boolean(category.systemKey);
+          {showLoader ? (
+            <ActivityIndicator size="large" className="mt-8" />
+          ) : waitingForFirstLoad ? (
+            <View className="mt-8" />
+          ) : (
+            categories.map((category) => {
+              const isEditing = editingId === category._id;
+              const isProtected = Boolean(category.systemKey);
 
-            return (
-              <View key={category._id} className="mb-2 rounded-xl border border-border bg-card p-4">
-                {isEditing ? (
-                  <>
-                    <TextInput
-                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      value={editingName}
-                      onChangeText={setEditingName}
-                      placeholder="Category name"
-                      placeholderTextColor={isDark ? '#737373' : '#a3a3a3'}
-                    />
-                    <View className="mt-3 flex-row gap-3">
-                      <TouchableOpacity
-                        onPress={() => {
-                          setEditingId(null);
-                          setEditingName('');
-                        }}
-                        className="flex-1 rounded-xl border border-border py-3">
-                        <Text className="text-center font-medium text-foreground">Cancel</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={saveCategoryEdit}
-                        disabled={saving || !editingName.trim()}
-                        className={`flex-1 rounded-xl py-3 ${
-                          saving || !editingName.trim() ? 'bg-muted' : 'bg-primary'
-                        }`}>
-                        <Text
-                          className={`text-center font-medium ${
-                            saving || !editingName.trim()
-                              ? 'text-muted-foreground'
-                              : 'text-primary-foreground'
+              return (
+                <View
+                  key={category._id}
+                  className="border-border bg-card mb-2 rounded-xl border p-4">
+                  {isEditing ? (
+                    <>
+                      <TextInput
+                        className="border-border bg-background text-foreground rounded-xl border px-3 py-2 text-sm"
+                        value={editingName}
+                        onChangeText={setEditingName}
+                        placeholder="Category name"
+                        placeholderTextColor={isDark ? '#737373' : '#a3a3a3'}
+                      />
+                      <View className="mt-3 flex-row gap-3">
+                        <TouchableOpacity
+                          onPress={() => {
+                            setEditingId(null);
+                            setEditingName('');
+                          }}
+                          className="border-border flex-1 rounded-xl border py-3">
+                          <Text className="text-foreground text-center font-medium">Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={saveCategoryEdit}
+                          disabled={saving || !editingName.trim()}
+                          className={`flex-1 rounded-xl py-3 ${
+                            saving || !editingName.trim() ? 'bg-muted' : 'bg-primary'
                           }`}>
-                          {saving ? 'Saving...' : 'Save'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View className="flex-row items-start justify-between gap-3">
-                      <View className="flex-1">
-                        <View className="flex-row flex-wrap items-center gap-2">
-                          <Text className="text-base font-semibold text-foreground">
-                            {category.name}
+                          <Text
+                            className={`text-center font-medium ${
+                              saving || !editingName.trim()
+                                ? 'text-muted-foreground'
+                                : 'text-primary-foreground'
+                            }`}>
+                            {saving ? 'Saving...' : 'Save'}
                           </Text>
-                          {isProtected && (
-                            <View className="rounded-full bg-secondary px-2 py-1">
-                              <Text className="text-[11px] font-medium text-muted-foreground">
-                                Default
-                              </Text>
-                            </View>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <View className="flex-row items-start justify-between gap-3">
+                        <View className="flex-1">
+                          <View className="flex-row flex-wrap items-center gap-2">
+                            <Text className="text-foreground text-base font-semibold">
+                              {category.name}
+                            </Text>
+                            {isProtected && (
+                              <View className="bg-secondary rounded-full px-2 py-1">
+                                <Text className="text-muted-foreground text-[11px] font-medium">
+                                  Default
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text className="text-muted-foreground mt-1 text-xs">
+                            {category.usageCount} {category.usageCount === 1 ? 'order' : 'orders'}{' '}
+                            linked
+                          </Text>
+                        </View>
+
+                        <View className="flex-row items-center gap-2">
+                          {!isProtected && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setEditingId(category._id);
+                                setEditingName(category.name);
+                              }}
+                              className="border-border rounded-full border p-2">
+                              <Pencil size={15} color={iconColor} />
+                            </TouchableOpacity>
+                          )}
+                          {!isProtected && (
+                            <TouchableOpacity
+                              onPress={() => confirmDelete(category)}
+                              className="border-border rounded-full border p-2">
+                              <Trash2 size={15} color="#ef4444" />
+                            </TouchableOpacity>
                           )}
                         </View>
-                        <Text className="mt-1 text-xs text-muted-foreground">
-                          {category.usageCount} {category.usageCount === 1 ? 'order' : 'orders'}{' '}
-                          linked
+                      </View>
+
+                      {isProtected && (
+                        <Text className="text-muted-foreground mt-3 text-xs leading-5">
+                          Default categories stay available at all times so saved orders always have
+                          a stable home.
                         </Text>
-                      </View>
-
-                      <View className="flex-row items-center gap-2">
-                        {!isProtected && (
-                          <TouchableOpacity
-                            onPress={() => {
-                              setEditingId(category._id);
-                              setEditingName(category.name);
-                            }}
-                            className="rounded-full border border-border p-2">
-                            <Pencil size={15} color={iconColor} />
-                          </TouchableOpacity>
-                        )}
-                        {!isProtected && (
-                          <TouchableOpacity
-                            onPress={() => confirmDelete(category)}
-                            className="rounded-full border border-border p-2">
-                            <Trash2 size={15} color="#ef4444" />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
-
-                    {isProtected && (
-                      <Text className="mt-3 text-xs leading-5 text-muted-foreground">
-                        Default categories stay available at all times so saved orders always have a
-                        stable home.
-                      </Text>
-                    )}
-                  </>
-                )}
-              </View>
-            );
-          })}
+                      )}
+                    </>
+                  )}
+                </View>
+              );
+            })
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

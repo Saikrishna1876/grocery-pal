@@ -17,6 +17,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { api } from '@/convex/_generated/api';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { MONTH_NAMES } from '@/lib/months';
 
 type MonthSummary = {
@@ -33,7 +34,12 @@ export default function Dashboard() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [showAddOptions, setShowAddOptions] = React.useState(false);
-  const monthsResult = useQuery(api.months.get);
+  const monthsLiveResult = useQuery(api.months.get);
+  const monthsState = useCachedQueryValue<MonthSummary[]>({
+    queryName: 'months.get',
+    liveData: monthsLiveResult as MonthSummary[] | undefined,
+    loaderDelayMs: 900,
+  });
   const createMonth = useMutation(api.months.add);
 
   const createCurrentMonth = async () => {
@@ -48,14 +54,15 @@ export default function Dashboard() {
     }
   };
 
-  const months = (monthsResult ?? []) as MonthSummary[];
+  const months = monthsState.data ?? [];
   const currentMonth = months[0];
   const previousMonth = months[1];
   const currentMonthTitle = currentMonth
     ? `${MONTH_NAMES[currentMonth.month]} ${currentMonth.year}`
     : undefined;
   const trend = currentMonth && previousMonth ? currentMonth.total - previousMonth.total : null;
-  const loading = monthsResult === undefined;
+  const showLoader = monthsState.showLoader;
+  const waitingForFirstLoad = monthsState.isInitialLoading && !showLoader;
 
   const iconColor = isDark ? '#e5e5e5' : '#171717';
   const mutedColor = isDark ? '#a3a3a3' : '#737373';
@@ -111,8 +118,10 @@ export default function Dashboard() {
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 172 }}>
-        {loading ? (
+        {showLoader ? (
           <ActivityIndicator size="large" className="mt-20" />
+        ) : waitingForFirstLoad ? (
+          <View className="mt-20" />
         ) : (
           <>
             {currentMonth && (

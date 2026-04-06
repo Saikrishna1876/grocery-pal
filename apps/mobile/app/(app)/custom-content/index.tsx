@@ -1,5 +1,5 @@
 import { type Href, useRouter } from 'expo-router';
-import { ArrowLeft, Box, ChevronRight, Tags, Users } from 'lucide-react-native';
+import { ArrowLeft, Box, ChevronRight, Tags } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 

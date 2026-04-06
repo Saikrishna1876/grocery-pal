@@ -14,6 +14,7 @@ import {
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { MONTH_NAMES } from '@/lib/months';
 
 type AnalyticsData = {
@@ -47,13 +48,24 @@ export default function MonthAnalytics() {
   const { width: screenWidth } = useWindowDimensions();
 
   const parsedMonthId = monthId as Id<'months'> | undefined;
-  const analyticsResult = useQuery(
+  const analyticsLiveResult = useQuery(
     api.analytics.getByMonth,
-    parsedMonthId ? { monthId: parsedMonthId } : 'skip',
+    parsedMonthId ? { monthId: parsedMonthId } : 'skip'
   );
-  const comparisonResult = useQuery(api.analytics.getComparison);
+  const comparisonLiveResult = useQuery(api.analytics.getComparison);
+  const analyticsState = useCachedQueryValue<Partial<AnalyticsData>>({
+    queryName: 'analytics.getByMonth',
+    args: parsedMonthId ? { monthId: parsedMonthId } : undefined,
+    liveData: analyticsLiveResult as Partial<AnalyticsData> | undefined,
+    loaderDelayMs: 900,
+  });
+  const comparisonState = useCachedQueryValue<ComparisonPoint[]>({
+    queryName: 'analytics.getComparison',
+    liveData: comparisonLiveResult as ComparisonPoint[] | undefined,
+    loaderDelayMs: 900,
+  });
 
-  const analyticsData = analyticsResult as Partial<AnalyticsData> | undefined;
+  const analyticsData = analyticsState.data;
   const analytics: AnalyticsViewModel | null = analyticsData
     ? {
         total: analyticsData.total ?? 0,
@@ -68,7 +80,7 @@ export default function MonthAnalytics() {
       }
     : null;
 
-  const comparisonData = (comparisonResult as ComparisonPoint[] | undefined) ?? [];
+  const comparisonData = comparisonState.data ?? [];
   const trendData = React.useMemo(() => {
     return [...comparisonData].sort((a, b) => {
       if (a.year === b.year) {
@@ -78,8 +90,11 @@ export default function MonthAnalytics() {
     });
   }, [comparisonData]);
 
-  const loading = parsedMonthId
-    ? analyticsResult === undefined || comparisonResult === undefined
+  const showLoader = parsedMonthId
+    ? analyticsState.showLoader || comparisonState.showLoader
+    : false;
+  const waitingForFirstLoad = parsedMonthId
+    ? (analyticsState.isInitialLoading || comparisonState.isInitialLoading) && !showLoader
     : false;
   const iconColor = isDark ? '#e5e5e5' : '#171717';
   const chartWidth = Math.max(screenWidth - 72, 220);
@@ -128,8 +143,10 @@ export default function MonthAnalytics() {
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        {loading ? (
+        {showLoader ? (
           <ActivityIndicator size="large" className="mt-20" />
+        ) : waitingForFirstLoad ? (
+          <View className="mt-20" />
         ) : !analytics ? (
           <View className="items-center py-10">
             <BarChart3 size={40} color={iconColor} />
@@ -271,8 +288,7 @@ export default function MonthAnalytics() {
                 {analytics.top_items.slice(0, 5).map((item, index) => (
                   <View
                     key={`${item.name}-${index}`}
-                    className="border-border/50 flex-row items-center justify-between border-b py-2 last:border-b-0"
-                  >
+                    className="border-border/50 flex-row items-center justify-between border-b py-2 last:border-b-0">
                     <Text className="text-foreground text-sm">
                       {index + 1}. {item.name}
                     </Text>

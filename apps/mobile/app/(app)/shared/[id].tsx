@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,6 +18,7 @@ import {
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -62,10 +64,22 @@ export default function SharedListDetailScreen() {
 
   const listId = id as Id<'shared_lists'> | undefined;
 
-  const detail = useQuery(api.sharedLists.getById, listId ? { id: listId } : 'skip') as
-    | SharedListDetail
-    | undefined;
-  const categories = (useQuery(api.orderCategories.get) ?? []) as OrderCategory[];
+  const detailLiveResult = useQuery(api.sharedLists.getById, listId ? { id: listId } : 'skip');
+  const categoriesLiveResult = useQuery(api.orderCategories.get);
+  const detailState = useCachedQueryValue<SharedListDetail>({
+    queryName: 'sharedLists.getById',
+    args: listId ? { id: listId } : undefined,
+    liveData: detailLiveResult as SharedListDetail | undefined,
+    loaderDelayMs: 900,
+  });
+  const categoriesState = useCachedQueryValue<OrderCategory[]>({
+    queryName: 'orderCategories.get',
+    liveData: categoriesLiveResult as OrderCategory[] | undefined,
+  });
+  const detail = detailState.data;
+  const categories = categoriesState.data ?? [];
+  const showLoader = detailState.showLoader;
+  const waitingForFirstLoad = detailState.isInitialLoading && !showLoader;
 
   const addItem = useMutation(api.sharedLists.addItem);
   const updateItem = useMutation(api.sharedLists.updateItem);
@@ -90,7 +104,9 @@ export default function SharedListDetailScreen() {
     null
   );
   const [editingItemId, setEditingItemId] = React.useState<Id<'shared_list_items'> | null>(null);
-  const [completingItemId, setCompletingItemId] = React.useState<Id<'shared_list_items'> | null>(null);
+  const [completingItemId, setCompletingItemId] = React.useState<Id<'shared_list_items'> | null>(
+    null
+  );
   const [completionPrice, setCompletionPrice] = React.useState('0');
   const [saving, setSaving] = React.useState(false);
   const [completing, setCompleting] = React.useState(false);
@@ -350,7 +366,11 @@ export default function SharedListDetailScreen() {
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 130 }}>
-        {activeItems.length === 0 ? (
+        {showLoader ? (
+          <ActivityIndicator size="large" className="mt-20" />
+        ) : waitingForFirstLoad ? (
+          <View className="mt-20" />
+        ) : activeItems.length === 0 ? (
           <View className="border-border bg-card items-center rounded-2xl border border-dashed p-8">
             <CheckCircle2 size={30} color={mutedColor} />
             <Text className="text-muted-foreground mt-3 text-sm">
@@ -361,9 +381,7 @@ export default function SharedListDetailScreen() {
           activeItems.map((item) => (
             <View key={item._id} className="border-border bg-card mb-2 rounded-xl border p-4">
               <View className="flex-row items-center justify-between gap-3">
-                <TouchableOpacity
-                  onPress={() => toggleCompleted(item)}
-                  className="flex-1">
+                <TouchableOpacity onPress={() => toggleCompleted(item)} className="flex-1">
                   <Text
                     className={`text-base font-semibold ${
                       item.completed ? 'text-muted-foreground line-through' : 'text-foreground'

@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
@@ -81,9 +82,24 @@ export default function ReviewScreen() {
   const [newItemPrice, setNewItemPrice] = React.useState('');
   const [newItemQty, setNewItemQty] = React.useState('1');
   const [newItemUnit, setNewItemUnit] = React.useState('unit');
-  const products = (useQuery(api.products.get) ?? []) as Doc<'products'>[];
-  const categories = (useQuery(api.orderCategories.get) ?? []) as OrderCategory[];
-  const lastUsedCategoryId = useQuery(api.orderCategories.getLastUsed);
+  const productsLiveResult = useQuery(api.products.get);
+  const categoriesLiveResult = useQuery(api.orderCategories.get);
+  const lastUsedCategoryIdLiveResult = useQuery(api.orderCategories.getLastUsed);
+  const productsState = useCachedQueryValue<Doc<'products'>[]>({
+    queryName: 'products.get',
+    liveData: productsLiveResult as Doc<'products'>[] | undefined,
+  });
+  const categoriesState = useCachedQueryValue<OrderCategory[]>({
+    queryName: 'orderCategories.get',
+    liveData: categoriesLiveResult as OrderCategory[] | undefined,
+  });
+  const lastUsedCategoryState = useCachedQueryValue<Id<'order_categories'> | null>({
+    queryName: 'orderCategories.getLastUsed',
+    liveData: lastUsedCategoryIdLiveResult as Id<'order_categories'> | null | undefined,
+  });
+  const products = productsState.data ?? [];
+  const categories = categoriesState.data ?? [];
+  const lastUsedCategoryId = lastUsedCategoryState.data;
   const createOrder = useMutation(api.orders.add);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<Id<'order_categories'> | null>(
     null
@@ -258,22 +274,22 @@ export default function ReviewScreen() {
     : [];
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="border-b border-border px-5 pb-4 pt-14">
+    <View className="bg-background flex-1">
+      <View className="border-border border-b px-5 pb-4 pt-14">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-3">
             <TouchableOpacity onPress={() => router.back()} className="rounded-full p-1">
               <ArrowLeft size={22} color={iconColor} />
             </TouchableOpacity>
             <View>
-              <Text className="text-xl font-bold text-foreground">Review Order</Text>
-              <Text className="text-xs text-muted-foreground">
+              <Text className="text-foreground text-xl font-bold">Review Order</Text>
+              <Text className="text-muted-foreground text-xs">
                 {monthTitle} · {reviewItems.length} items
               </Text>
             </View>
           </View>
-          <View className="rounded-full bg-secondary px-3 py-1">
-            <Text className="text-xs font-medium text-muted-foreground">{source}</Text>
+          <View className="bg-secondary rounded-full px-3 py-1">
+            <Text className="text-muted-foreground text-xs font-medium">{source}</Text>
           </View>
         </View>
       </View>
@@ -285,19 +301,19 @@ export default function ReviewScreen() {
           className="flex-1"
           contentContainerStyle={{ padding: 20, paddingBottom: 200 }}
           keyboardShouldPersistTaps="handled">
-          <View className="mb-4 rounded-2xl border border-border bg-card p-4">
+          <View className="border-border bg-card mb-4 rounded-2xl border p-4">
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1">
-                <Text className="text-sm font-semibold text-foreground">Order Category</Text>
-                <Text className="mt-1 text-xs text-muted-foreground">
+                <Text className="text-foreground text-sm font-semibold">Order Category</Text>
+                <Text className="text-muted-foreground mt-1 text-xs">
                   Use one category per order so analytics stays easy to read.
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => router.push('/custom-content/categories' as Href)}
-                className="flex-row items-center gap-1 rounded-full border border-border px-3 py-2">
+                className="border-border flex-row items-center gap-1 rounded-full border px-3 py-2">
                 <Settings2 size={14} color={iconColor} />
-                <Text className="text-xs font-medium text-foreground">Manage</Text>
+                <Text className="text-foreground text-xs font-medium">Manage</Text>
               </TouchableOpacity>
             </View>
 
@@ -329,7 +345,7 @@ export default function ReviewScreen() {
             </ScrollView>
 
             {selectedCategory && (
-              <Text className="mt-3 text-xs text-muted-foreground">
+              <Text className="text-muted-foreground mt-3 text-xs">
                 Saving this order under {selectedCategory.name}.
               </Text>
             )}
@@ -338,27 +354,27 @@ export default function ReviewScreen() {
           {reviewItems.length === 0 && !showAddItem ? (
             <View className="items-center py-16">
               <AlertTriangle size={40} color={mutedColor} />
-              <Text className="mt-3 text-center text-base font-medium text-muted-foreground">
+              <Text className="text-muted-foreground mt-3 text-center text-base font-medium">
                 No items detected
               </Text>
-              <Text className="mt-1 text-center text-sm text-muted-foreground">
+              <Text className="text-muted-foreground mt-1 text-center text-sm">
                 Add items manually to create an order
               </Text>
             </View>
           ) : (
             reviewItems.map((item) => (
-              <View key={item.id} className="mb-3 rounded-xl border border-border bg-card p-4">
+              <View key={item.id} className="border-border bg-card mb-3 rounded-xl border p-4">
                 <View className="mr-2 flex-row items-start justify-between">
                   <View className="flex-1">
                     <TextInput
-                      className="text-base font-semibold text-foreground"
+                      className="text-foreground text-base font-semibold"
                       value={item.name}
                       onChangeText={(text) => updateItem(item.id, { name: text })}
                       placeholder="Item name"
                       placeholderTextColor={mutedColor}
                     />
                     {item.matched_product && (
-                      <Text className="mt-0.5 text-xs text-muted-foreground">
+                      <Text className="text-muted-foreground mt-0.5 text-xs">
                         Matched: {item.matched_product}
                       </Text>
                     )}
@@ -379,7 +395,7 @@ export default function ReviewScreen() {
                 </View>
 
                 <View className="mt-3 flex-row items-center gap-3">
-                  <View className="flex-row items-center rounded-lg border border-border">
+                  <View className="border-border flex-row items-center rounded-lg border">
                     <TouchableOpacity
                       onPress={() =>
                         updateItem(item.id, { quantity: Math.max(0.5, item.quantity - 1) })
@@ -388,7 +404,7 @@ export default function ReviewScreen() {
                       <Minus size={14} color={iconColor} />
                     </TouchableOpacity>
                     <TextInput
-                      className="min-w-[40px] text-center text-sm font-medium text-foreground"
+                      className="text-foreground min-w-[40px] text-center text-sm font-medium"
                       value={item.quantity.toString()}
                       onChangeText={(text) => {
                         const number = parseFloat(text);
@@ -405,7 +421,7 @@ export default function ReviewScreen() {
                     </TouchableOpacity>
                   </View>
                   <TextInput
-                    className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
+                    className="border-border text-foreground rounded-lg border px-3 py-2 text-sm"
                     value={item.unit}
                     onChangeText={(text) => updateItem(item.id, { unit: text })}
                     placeholder="unit"
@@ -414,9 +430,9 @@ export default function ReviewScreen() {
                   />
                   <View className="flex-1 items-end">
                     <View className="flex-row items-center">
-                      <Text className="mr-1 text-sm text-muted-foreground">₹</Text>
+                      <Text className="text-muted-foreground mr-1 text-sm">₹</Text>
                       <TextInput
-                        className="text-lg font-bold text-foreground"
+                        className="text-foreground text-lg font-bold"
                         value={item.price.toString()}
                         onChangeText={(text) => {
                           const number = parseFloat(text);
@@ -467,13 +483,13 @@ export default function ReviewScreen() {
           )}
 
           {showAddItem ? (
-            <View className="rounded-xl border border-border bg-card p-4">
-              <Text className="mb-3 text-sm font-semibold text-foreground">Add Manual Item</Text>
-              <View className="mb-3 rounded-lg border border-border px-3 py-2">
+            <View className="border-border bg-card rounded-xl border p-4">
+              <Text className="text-foreground mb-3 text-sm font-semibold">Add Manual Item</Text>
+              <View className="border-border mb-3 rounded-lg border px-3 py-2">
                 <View className="flex-row items-center gap-2">
                   <Search size={16} color={mutedColor} />
                   <TextInput
-                    className="flex-1 text-sm text-foreground"
+                    className="text-foreground flex-1 text-sm"
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Search products..."
@@ -483,15 +499,15 @@ export default function ReviewScreen() {
               </View>
 
               {filteredProducts.length > 0 && (
-                <View className="mb-3 max-h-48 rounded-lg border border-border">
+                <View className="border-border mb-3 max-h-48 rounded-lg border">
                   <ScrollView nestedScrollEnabled>
                     {filteredProducts.slice(0, 8).map((product) => (
                       <TouchableOpacity
                         key={product._id}
                         onPress={() => selectProductForAdd(product)}
-                        className="border-b border-border px-3 py-3 last:border-b-0">
-                        <Text className="text-sm font-medium text-foreground">{product.name}</Text>
-                        <Text className="text-xs text-muted-foreground">
+                        className="border-border border-b px-3 py-3 last:border-b-0">
+                        <Text className="text-foreground text-sm font-medium">{product.name}</Text>
+                        <Text className="text-muted-foreground text-xs">
                           {product.category} · {product.unit} · ₹{product.price}
                         </Text>
                       </TouchableOpacity>
@@ -502,7 +518,7 @@ export default function ReviewScreen() {
 
               <View className="gap-3">
                 <TextInput
-                  className="rounded-lg border border-border px-3 py-3 text-sm text-foreground"
+                  className="border-border text-foreground rounded-lg border px-3 py-3 text-sm"
                   value={newItemName}
                   onChangeText={setNewItemName}
                   placeholder="Item name"
@@ -510,7 +526,7 @@ export default function ReviewScreen() {
                 />
                 <View className="flex-row gap-3">
                   <TextInput
-                    className="flex-1 rounded-lg border border-border px-3 py-3 text-sm text-foreground"
+                    className="border-border text-foreground flex-1 rounded-lg border px-3 py-3 text-sm"
                     value={newItemQty}
                     onChangeText={setNewItemQty}
                     placeholder="Qty"
@@ -518,14 +534,14 @@ export default function ReviewScreen() {
                     keyboardType="numeric"
                   />
                   <TextInput
-                    className="flex-1 rounded-lg border border-border px-3 py-3 text-sm text-foreground"
+                    className="border-border text-foreground flex-1 rounded-lg border px-3 py-3 text-sm"
                     value={newItemUnit}
                     onChangeText={setNewItemUnit}
                     placeholder="Unit"
                     placeholderTextColor={mutedColor}
                   />
                   <TextInput
-                    className="flex-1 rounded-lg border border-border px-3 py-3 text-sm text-foreground"
+                    className="border-border text-foreground flex-1 rounded-lg border px-3 py-3 text-sm"
                     value={newItemPrice}
                     onChangeText={setNewItemPrice}
                     placeholder="Price"
@@ -538,29 +554,29 @@ export default function ReviewScreen() {
               <View className="mt-4 flex-row gap-3">
                 <TouchableOpacity
                   onPress={() => setShowAddItem(false)}
-                  className="flex-1 rounded-xl border border-border py-3">
-                  <Text className="text-center font-medium text-foreground">Cancel</Text>
+                  className="border-border flex-1 rounded-xl border py-3">
+                  <Text className="text-foreground text-center font-medium">Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={addManualItem}
-                  className="flex-1 rounded-xl bg-primary py-3">
-                  <Text className="text-center font-medium text-primary-foreground">Add Item</Text>
+                  className="bg-primary flex-1 rounded-xl py-3">
+                  <Text className="text-primary-foreground text-center font-medium">Add Item</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
             <TouchableOpacity
               onPress={() => setShowAddItem(true)}
-              className="rounded-xl border border-dashed border-border bg-card py-4">
-              <Text className="text-center font-medium text-foreground">+ Add Manual Item</Text>
+              className="border-border bg-card rounded-xl border border-dashed py-4">
+              <Text className="text-foreground text-center font-medium">+ Add Manual Item</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
 
-        <View className="border-t border-border bg-background px-5 pb-8 pt-4">
+        <View className="border-border bg-background border-t px-5 pb-8 pt-4">
           <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-sm text-muted-foreground">Total</Text>
-            <Text className="text-2xl font-bold text-foreground">₹{total.toFixed(2)}</Text>
+            <Text className="text-muted-foreground text-sm">Total</Text>
+            <Text className="text-foreground text-2xl font-bold">₹{total.toFixed(2)}</Text>
           </View>
           <TouchableOpacity
             onPress={confirmOrder}

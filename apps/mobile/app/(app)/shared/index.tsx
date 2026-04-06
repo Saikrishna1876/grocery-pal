@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
@@ -7,6 +8,7 @@ import { ArrowLeft, CheckCircle2, Plus, Share2, Users } from 'lucide-react-nativ
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -38,7 +40,15 @@ export default function SharedListsHubScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const lists = (useQuery(api.sharedLists.get) ?? []) as SharedListSummary[];
+  const listsLiveResult = useQuery(api.sharedLists.get);
+  const listsState = useCachedQueryValue<SharedListSummary[]>({
+    queryName: 'sharedLists.get',
+    liveData: listsLiveResult as SharedListSummary[] | undefined,
+    loaderDelayMs: 900,
+  });
+  const lists = listsState.data ?? [];
+  const showLoader = listsState.showLoader;
+  const waitingForFirstLoad = listsState.isInitialLoading && !showLoader;
 
   const createList = useMutation(api.sharedLists.create);
   const acceptInvite = useMutation(api.sharedLists.acceptInvite);
@@ -149,7 +159,11 @@ export default function SharedListsHubScreen() {
           </TouchableOpacity>
         </View>
 
-        {lists.length === 0 ? (
+        {showLoader ? (
+          <ActivityIndicator size="large" className="mt-20" />
+        ) : waitingForFirstLoad ? (
+          <View className="mt-20" />
+        ) : lists.length === 0 ? (
           <View className="border-border bg-card items-center rounded-2xl border border-dashed p-8">
             <Users size={36} color={mutedColor} />
             <Text className="text-foreground mt-3 text-base font-semibold">
