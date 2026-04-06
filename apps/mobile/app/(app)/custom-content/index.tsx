@@ -46,21 +46,6 @@ export default function CustomContentScreen() {
           <ChevronRight size={18} color={mutedColor} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push('/shared' as Href)}
-          className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
-          <View className="flex-1 flex-row items-center gap-3">
-            <Users size={18} color={iconColor} />
-            <View className="flex-1">
-              <Text className="text-foreground text-base font-semibold">Shared Lists</Text>
-              <Text className="text-muted-foreground mt-0.5 text-xs">
-                Collaborate with family or friends on one list
-              </Text>
-            </View>
-          </View>
-          <ChevronRight size={18} color={mutedColor} />
-        </TouchableOpacity>
-
         <View className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4 opacity-70">
           <View className="flex-1 flex-row items-center gap-3">
             <Box size={18} color={iconColor} />
