@@ -4,7 +4,7 @@
     "slug": "grocery-pal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon.jpg",
     "scheme": "app",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -12,9 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.saikrishna1876.grocerypal"
@@ -29,13 +27,9 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.jpg"
     },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "expo-web-browser"
-    ],
+    "plugins": ["expo-router", "expo-secure-store", "expo-web-browser"],
     "experiments": {
       "typedRoutes": true
     },
