@@ -1,14 +1,40 @@
 {
   "cli": {
-    "version": ">= 16.32.0",
+    "version": ">= 18.0.0",
+    "requireCommit": false,
     "appVersionSource": "remote"
   },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CONVEX_SITE_URL": "https://accurate-mallard-325.eu-west-1.convex.site"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
     "preview": {
       "distribution": "internal",
       "credentialsSource": "local",
+      "env": {
+        "EXPO_PUBLIC_CONVEX_SITE_URL": "https://accurate-mallard-325.eu-west-1.convex.site"
+      },
       "android": {
         "buildType": "apk"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CONVEX_SITE_URL": "https://accurate-mallard-325.eu-west-1.convex.site"
+      },
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   }
