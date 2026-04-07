@@ -5,12 +5,10 @@ import * as SecureStore from 'expo-secure-store';
 
 import { resolveRuntimeUrl } from '@/lib/runtime-url';
 
-export const authBaseUrl = resolveRuntimeUrl(
-  process.env.EXPO_PUBLIC_AUTH_URL ?? process.env.EXPO_PUBLIC_CONVEX_SITE_URL
-);
+export const authBaseUrl = resolveRuntimeUrl(process.env.EXPO_PUBLIC_CONVEX_SITE_URL);
 
 if (!authBaseUrl) {
-  throw new Error('EXPO_PUBLIC_AUTH_URL or EXPO_PUBLIC_CONVEX_SITE_URL must be configured.');
+  throw new Error('EXPO_PUBLIC_CONVEX_SITE_URL must be configured.');
 }
 
 export const authClient = createAuthClient({

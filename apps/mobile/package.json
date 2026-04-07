@@ -29,6 +29,7 @@
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@better-auth/expo": "1.4.21",
     "@convex-dev/better-auth": "0.10.13",
+    "@react-navigation/core": "^7.17.2",
     "@react-navigation/native": "^7.1.18",
     "@supabase/supabase-js": "^2.99.1",
     "better-auth": "1.4.21",
