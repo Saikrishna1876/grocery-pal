@@ -4,6 +4,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
 import { signOut, useSession } from '@/lib/auth/client';
+import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 import { useThemePreference } from '@/lib/theme-preference';
 
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -17,8 +18,8 @@ export default function ProfileScreen() {
   const [signingOut, setSigningOut] = React.useState(false);
   const isMounted = React.useRef(true);
 
-  const iconColor = isDark ? '#e5e5e5' : '#171717';
-  const mutedColor = isDark ? '#a3a3a3' : '#737373';
+  const { iconColor, mutedColor, selectedCardBg, selectedCardBorder, selectedLabelColor } =
+    getScreenColorTokens(isDark);
   const displayName = session?.user?.name?.trim() || 'Grocery Pal User';
   const email = session?.user?.email?.trim() || 'No email available';
 
@@ -96,19 +97,19 @@ export default function ProfileScreen() {
                   onPress={() => {
                     void setThemePreference(option.key);
                   }}
+                  activeOpacity={0.9}
+                  style={
+                    isSelected
+                      ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
+                      : undefined
+                  }
                   className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 ${
-                    isSelected ? 'border-primary bg-primary' : 'border-border bg-background'
-                  }`}
-                >
-                  <Icon
-                    size={14}
-                    color={isSelected ? (isDark ? '#0a0a0a' : '#fafafa') : iconColor}
-                  />
+                    isSelected ? 'border-primary bg-background' : 'border-border bg-background'
+                  }`}>
+                  <Icon size={14} color={isSelected ? selectedLabelColor : iconColor} />
                   <Text
-                    className={`text-xs font-semibold ${
-                      isSelected ? 'text-primary-foreground' : 'text-foreground'
-                    }`}
-                  >
+                    style={isSelected ? { color: selectedLabelColor } : undefined}
+                    className="text-foreground text-xs font-semibold">
                     {option.label}
                   </Text>
                 </TouchableOpacity>
@@ -120,8 +121,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           disabled={signingOut}
           onPress={handleSignOut}
-          className="mt-5 flex-row items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-3.5"
-        >
+          className="mt-5 flex-row items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-3.5">
           {signingOut ? (
             <ActivityIndicator color="#ef4444" />
           ) : (

@@ -23,11 +23,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppText as Text } from '@/components/app-text';
 
 type ReviewItem = {
   id: string;
@@ -276,20 +276,22 @@ export default function ReviewScreen() {
   return (
     <View className="bg-background flex-1">
       <View className="border-border border-b px-5 pb-4 pt-14">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
+        <View className="flex-row flex-wrap items-start justify-between gap-2">
+          <View className="min-w-[220px] flex-1 flex-row items-center gap-3">
             <TouchableOpacity onPress={() => router.back()} className="rounded-full p-1">
               <ArrowLeft size={22} color={iconColor} />
             </TouchableOpacity>
-            <View>
+            <View className="flex-1">
               <Text className="text-foreground text-xl font-bold">Review Order</Text>
-              <Text className="text-muted-foreground text-xs">
+              <Text numberOfLines={2} className="text-muted-foreground text-xs">
                 {monthTitle} · {reviewItems.length} items
               </Text>
             </View>
           </View>
-          <View className="bg-secondary rounded-full px-3 py-1">
-            <Text className="text-muted-foreground text-xs font-medium">{source}</Text>
+          <View className="bg-secondary max-w-full rounded-full px-3 py-1">
+            <Text numberOfLines={1} className="text-muted-foreground text-xs font-medium">
+              {source}
+            </Text>
           </View>
         </View>
       </View>
@@ -334,6 +336,7 @@ export default function ReviewScreen() {
                       isSelected ? 'border-primary bg-primary' : 'border-border bg-background'
                     }`}>
                     <Text
+                      numberOfLines={1}
                       className={`text-sm font-medium ${
                         isSelected ? 'text-primary-foreground' : 'text-foreground'
                       }`}>
@@ -394,7 +397,7 @@ export default function ReviewScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <View className="mt-3 flex-row items-center gap-3">
+                <View className="mt-3 flex-row flex-wrap items-center gap-3">
                   <View className="border-border flex-row items-center rounded-lg border">
                     <TouchableOpacity
                       onPress={() =>
@@ -426,9 +429,9 @@ export default function ReviewScreen() {
                     onChangeText={(text) => updateItem(item.id, { unit: text })}
                     placeholder="unit"
                     placeholderTextColor={mutedColor}
-                    style={{ minWidth: 60 }}
+                    style={{ minWidth: 72 }}
                   />
-                  <View className="flex-1 items-end">
+                  <View className="min-w-[120px] flex-1 items-end">
                     <View className="flex-row items-center">
                       <Text className="text-muted-foreground mr-1 text-sm">₹</Text>
                       <TextInput
@@ -441,7 +444,7 @@ export default function ReviewScreen() {
                           }
                         }}
                         keyboardType="numeric"
-                        style={{ minWidth: 50, textAlign: 'right' }}
+                        style={{ minWidth: 80, textAlign: 'right' }}
                       />
                     </View>
                   </View>
@@ -467,7 +470,7 @@ export default function ReviewScreen() {
                       ) : (
                         <TrendingDown size={14} color="#22c55e" />
                       )}
-                      <Text className="flex-1 text-xs" style={{ color: mutedColor }}>
+                      <Text className="flex-1 text-xs leading-4" style={{ color: mutedColor }}>
                         DB price: ₹{item.database_price.toFixed(2)} {' · '}
                         {item.price_difference > 0 ? '+' : ''}₹{item.price_difference.toFixed(2)}
                       </Text>
@@ -524,9 +527,9 @@ export default function ReviewScreen() {
                   placeholder="Item name"
                   placeholderTextColor={mutedColor}
                 />
-                <View className="flex-row gap-3">
+                <View className="flex-row flex-wrap gap-3">
                   <TextInput
-                    className="border-border text-foreground flex-1 rounded-lg border px-3 py-3 text-sm"
+                    className="border-border text-foreground min-w-[120px] flex-1 rounded-lg border px-3 py-3 text-sm"
                     value={newItemQty}
                     onChangeText={setNewItemQty}
                     placeholder="Qty"
@@ -534,14 +537,14 @@ export default function ReviewScreen() {
                     keyboardType="numeric"
                   />
                   <TextInput
-                    className="border-border text-foreground flex-1 rounded-lg border px-3 py-3 text-sm"
+                    className="border-border text-foreground min-w-[120px] flex-1 rounded-lg border px-3 py-3 text-sm"
                     value={newItemUnit}
                     onChangeText={setNewItemUnit}
                     placeholder="Unit"
                     placeholderTextColor={mutedColor}
                   />
                   <TextInput
-                    className="border-border text-foreground flex-1 rounded-lg border px-3 py-3 text-sm"
+                    className="border-border text-foreground min-w-[120px] flex-1 rounded-lg border px-3 py-3 text-sm"
                     value={newItemPrice}
                     onChangeText={setNewItemPrice}
                     placeholder="Price"

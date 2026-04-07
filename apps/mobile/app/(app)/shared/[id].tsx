@@ -2,6 +2,7 @@ import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
+import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -23,11 +24,11 @@ import {
   Modal,
   ScrollView,
   Share,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppText as Text } from '@/components/app-text';
 
 type SharedListDetail = {
   list: {
@@ -111,8 +112,8 @@ export default function SharedListDetailScreen() {
   const [saving, setSaving] = React.useState(false);
   const [completing, setCompleting] = React.useState(false);
 
-  const iconColor = isDark ? '#e5e5e5' : '#171717';
-  const mutedColor = isDark ? '#a3a3a3' : '#737373';
+  const { iconColor, mutedColor, selectedCardBg, selectedCardBorder, selectedLabelColor } =
+    getScreenColorTokens(isDark);
 
   const resetItemForm = () => {
     setName('');
@@ -334,16 +335,16 @@ export default function SharedListDetailScreen() {
   return (
     <View className="bg-background flex-1">
       <View className="border-border border-b px-5 pb-4 pt-14">
-        <View className="flex-row items-center justify-between gap-2">
-          <View className="flex-row items-center gap-3">
+        <View className="flex-row flex-wrap items-center justify-between gap-2">
+          <View className="min-w-[220px] flex-1 flex-row items-center gap-3">
             <TouchableOpacity onPress={() => router.back()} className="rounded-full p-1">
               <ArrowLeft size={22} color={iconColor} />
             </TouchableOpacity>
-            <View>
-              <Text className="text-foreground text-xl font-bold">
+            <View className="flex-1">
+              <Text numberOfLines={2} className="text-foreground text-xl font-bold">
                 {detail?.list.name ?? 'Shared List'}
               </Text>
-              <Text className="text-muted-foreground text-xs">
+              <Text numberOfLines={2} className="text-muted-foreground text-xs">
                 {isOwner ? 'Owner' : 'Editor'} · ₹{total.toFixed(0)}
               </Text>
             </View>
@@ -380,15 +381,16 @@ export default function SharedListDetailScreen() {
         ) : (
           activeItems.map((item) => (
             <View key={item._id} className="border-border bg-card mb-2 rounded-xl border p-4">
-              <View className="flex-row items-center justify-between gap-3">
+              <View className="flex-row items-start justify-between gap-3">
                 <TouchableOpacity onPress={() => toggleCompleted(item)} className="flex-1">
                   <Text
+                    numberOfLines={2}
                     className={`text-base font-semibold ${
                       item.completed ? 'text-muted-foreground line-through' : 'text-foreground'
                     }`}>
                     {item.name}
                   </Text>
-                  <Text className="text-muted-foreground mt-0.5 text-xs">
+                  <Text numberOfLines={2} className="text-muted-foreground mt-0.5 text-xs">
                     {item.quantity} {item.unit} · ₹{item.price.toFixed(2)} each
                   </Text>
                 </TouchableOpacity>
@@ -645,13 +647,18 @@ export default function SharedListDetailScreen() {
                   <TouchableOpacity
                     key={category._id}
                     onPress={() => setSelectedCategoryId(category._id)}
+                    activeOpacity={0.9}
+                    style={
+                      selected
+                        ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
+                        : undefined
+                    }
                     className={`rounded-full border px-4 py-2 ${
-                      selected ? 'border-primary bg-primary' : 'border-border bg-card'
+                      selected ? 'border-primary bg-card' : 'border-border bg-card'
                     }`}>
                     <Text
-                      className={`text-xs font-medium ${
-                        selected ? 'text-primary-foreground' : 'text-foreground'
-                      }`}>
+                      style={selected ? { color: selectedLabelColor } : undefined}
+                      className="text-foreground text-xs font-medium">
                       {category.name}
                     </Text>
                   </TouchableOpacity>

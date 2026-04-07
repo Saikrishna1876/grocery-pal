@@ -120,14 +120,16 @@ export default function SharedListsHubScreen() {
   return (
     <View className="bg-background flex-1">
       <View className="border-border border-b px-5 pb-4 pt-14">
-        <View className="flex-row items-center justify-between gap-3">
-          <View className="flex-row items-center gap-3">
+        <View className="flex-row flex-wrap items-center justify-between gap-3">
+          <View className="min-w-[220px] flex-1 flex-row items-center gap-3">
             <TouchableOpacity onPress={() => router.back()} className="rounded-full p-1">
               <ArrowLeft size={22} color={iconColor} />
             </TouchableOpacity>
-            <View>
-              <Text className="text-foreground text-xl font-bold">Shared Lists</Text>
-              <Text className="text-muted-foreground text-xs">
+            <View className="flex-1">
+              <Text numberOfLines={2} className="text-foreground text-xl font-bold">
+                Shared Lists
+              </Text>
+              <Text numberOfLines={2} className="text-muted-foreground text-xs">
                 Collaborate and convert to orders
               </Text>
             </View>

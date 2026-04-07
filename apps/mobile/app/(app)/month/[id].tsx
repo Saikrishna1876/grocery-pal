@@ -7,12 +7,12 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { api } from '@/convex/_generated/api';
+import { AppText as Text } from '@/components/app-text';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
@@ -137,13 +137,15 @@ export default function MonthDetail() {
   return (
     <View className="bg-background flex-1">
       <View className="border-border border-b px-5 pb-4 pt-14">
-        <View className="flex-row items-center justify-between gap-3">
+        <View className="flex-row flex-wrap items-center justify-between gap-3">
           <View className="flex-1 flex-row items-center gap-3">
             <TouchableOpacity onPress={() => router.back()} className="rounded-full p-1">
               <ArrowLeft size={22} color={iconColor} />
             </TouchableOpacity>
             <View className="flex-1">
-              <Text className="text-foreground text-xl font-bold">{title}</Text>
+              <Text numberOfLines={2} className="text-foreground text-xl font-bold">
+                {title}
+              </Text>
             </View>
           </View>
           <TouchableOpacity
@@ -154,9 +156,11 @@ export default function MonthDetail() {
                 `/month/analytics?monthId=${encodeURIComponent(id)}&monthTitle=${encodeURIComponent(title ?? '')}` as Href
               )
             }
-            className="border-border flex-row items-center gap-1.5 rounded-full border px-3 py-2">
+            className="border-border max-w-full flex-row items-center gap-1.5 rounded-full border px-3 py-2">
             <BarChart3 size={16} color={iconColor} />
-            <Text className="text-foreground text-xs font-medium">Analytics</Text>
+            <Text numberOfLines={1} className="text-foreground text-xs font-medium">
+              Analytics
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -206,9 +210,9 @@ export default function MonthDetail() {
                   <View
                     key={order._id}
                     className="border-border bg-card mb-2 rounded-xl border p-4">
-                    <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-start justify-between gap-2">
                       <View className="flex-1">
-                        <View className="flex-row items-center gap-2">
+                        <View className="flex-row flex-wrap items-center gap-2">
                           <Text className="text-foreground text-base font-semibold">
                             ₹{order.total.toFixed(0)}
                           </Text>
@@ -218,7 +222,7 @@ export default function MonthDetail() {
                             className="bg-primary/10 rounded-full px-2 py-0.5">
                             <View className="flex-row items-center gap-1">
                               <Tag size={10} color={iconColor} />
-                              <Text className="text-foreground text-xs">
+                              <Text numberOfLines={1} className="text-foreground text-xs">
                                 {updatingThisOrder
                                   ? 'Updating...'
                                   : (order.category_name ?? 'Uncategorized')}
@@ -226,10 +230,12 @@ export default function MonthDetail() {
                             </View>
                           </TouchableOpacity>
                           <View className="bg-secondary rounded-full px-2 py-0.5">
-                            <Text className="text-muted-foreground text-xs">{order.source}</Text>
+                            <Text numberOfLines={1} className="text-muted-foreground text-xs">
+                              {order.source}
+                            </Text>
                           </View>
                         </View>
-                        <Text className="text-muted-foreground mt-1 text-xs">
+                        <Text numberOfLines={2} className="text-muted-foreground mt-1 text-xs">
                           {order.items.length} items ·{' '}
                           {new Date(order._creationTime).toLocaleDateString()}
                         </Text>
@@ -260,6 +266,7 @@ export default function MonthDetail() {
                                     : 'border-border bg-background'
                                 }`}>
                                 <Text
+                                  numberOfLines={1}
                                   className={`text-xs font-medium ${
                                     isSelected ? 'text-primary-foreground' : 'text-foreground'
                                   }`}>
@@ -274,10 +281,12 @@ export default function MonthDetail() {
                     <View className="border-border/50 mt-3 border-t pt-3">
                       {order.items.slice(0, 4).map((item) => (
                         <View key={item._id} className="flex-row items-center justify-between py-1">
-                          <Text className="text-muted-foreground text-sm">
+                          <Text
+                            numberOfLines={2}
+                            className="text-muted-foreground flex-1 pr-2 text-sm">
                             {item.name} x{item.quantity} {item.unit}
                           </Text>
-                          <Text className="text-foreground text-sm">
+                          <Text className="text-foreground shrink-0 text-sm">
                             ₹{(item.price * item.quantity).toFixed(0)}
                           </Text>
                         </View>

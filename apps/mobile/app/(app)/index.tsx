@@ -15,8 +15,9 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { api } from '@/convex/_generated/api';
+import { AppText as Text } from '@/components/app-text';
 import { useCachedQueryValue } from '@/lib/cached-query';
 import { MONTH_NAMES } from '@/lib/months';
 
@@ -129,13 +130,13 @@ export default function Dashboard() {
                 <Text className="text-muted-foreground text-sm font-medium">
                   {MONTH_NAMES[currentMonth.month]} {currentMonth.year}
                 </Text>
-                <View className="mt-2 flex-row items-end">
+                <View className="mt-2 flex-row flex-wrap items-end gap-1">
                   <IndianRupee size={24} color={iconColor} />
                   <Text className="text-foreground text-3xl font-bold">
                     {currentMonth.total.toFixed(0)}
                   </Text>
                 </View>
-                <View className="mt-3 flex-row gap-5">
+                <View className="mt-3 flex-row flex-wrap gap-x-5 gap-y-2">
                   <View className="flex-row items-center gap-1.5">
                     <ShoppingCart size={14} color={mutedColor} />
                     <Text className="text-muted-foreground text-xs">
@@ -156,6 +157,7 @@ export default function Dashboard() {
                         <TrendingDown size={14} color={greenColor} />
                       )}
                       <Text
+                        numberOfLines={2}
                         style={{ color: trend > 0 ? redColor : greenColor }}
                         className="text-xs font-medium">
                         {trend > 0 ? '+' : ''}
@@ -167,18 +169,18 @@ export default function Dashboard() {
               </View>
             )}
 
-            <View className="mb-3 flex-row gap-3">
+            <View className="mb-3 flex-row flex-wrap gap-3">
               <TouchableOpacity
                 onPress={createCurrentMonth}
-                className="bg-primary flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5">
+                className="bg-primary min-w-[160px] flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3.5">
                 <Plus size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
-                <Text className="text-primary-foreground font-semibold">New Month</Text>
+                <Text className="text-primary-foreground text-center font-semibold">New Month</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/custom-content' as Href)}
-                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5">
+                className="border-border bg-card min-w-[160px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5">
                 <Tag size={18} color={iconColor} />
-                <Text className="text-foreground font-semibold">Custom Content</Text>
+                <Text className="text-foreground text-center font-semibold">Custom Content</Text>
               </TouchableOpacity>
             </View>
 
@@ -214,15 +216,15 @@ export default function Dashboard() {
                     })
                   }
                   className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
-                  <View className="flex-1">
-                    <Text className="text-foreground text-base font-semibold">
+                  <View className="flex-1 pr-3">
+                    <Text numberOfLines={1} className="text-foreground text-base font-semibold">
                       {MONTH_NAMES[month.month]} {month.year}
                     </Text>
-                    <Text className="text-muted-foreground mt-0.5 text-xs">
+                    <Text numberOfLines={1} className="text-muted-foreground mt-0.5 text-xs">
                       {month.order_count} orders · {month.item_count} items
                     </Text>
                   </View>
-                  <View className="flex-row items-center gap-2">
+                  <View className="shrink-0 flex-row items-center gap-2">
                     <Text className="text-foreground text-lg font-bold">
                       ₹{month.total.toFixed(0)}
                     </Text>
@@ -236,17 +238,17 @@ export default function Dashboard() {
       </ScrollView>
 
       <View className="border-border bg-background border-t px-5 pb-8 pt-3">
-        <View className="flex-row gap-3">
+        <View className="flex-row flex-wrap gap-3">
           <TouchableOpacity
             onPress={() => router.push('/profile' as Href)}
-            className="border-border bg-card flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+            className="border-border bg-card min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
             <User size={18} color={iconColor} />
-            <Text className="text-foreground font-semibold">Profile</Text>
+            <Text className="text-foreground text-center font-semibold">Profile</Text>
           </TouchableOpacity>
           <TouchableOpacity
             disabled={!currentMonth}
             onPress={openAddOptions}
-            className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
+            className={`min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
               currentMonth ? 'bg-primary' : 'bg-secondary'
             }`}>
             <Plus size={18} color={addButtonIconColor} />

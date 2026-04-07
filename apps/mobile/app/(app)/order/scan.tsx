@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import { getErrorMessage } from '@/lib/error';
+import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 import { useAction } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -29,12 +30,14 @@ export default function ScanScreen() {
   const [processing, setProcessing] = React.useState(false);
   const processImageAction = useAction(api.scan.processImage);
 
-  const iconColor = isDark ? '#e5e5e5' : '#171717';
-  const mutedColor = isDark ? '#a3a3a3' : '#737373';
-  const selectedCardBg = isDark ? '#111827' : '#f3f4f6';
-  const selectedCardBorder = isDark ? '#60a5fa' : '#2563eb';
-  const selectedLabelColor = isDark ? '#f9fafb' : '#111827';
-  const selectedDescColor = isDark ? '#d1d5db' : '#4b5563';
+  const {
+    iconColor,
+    mutedColor,
+    selectedCardBg,
+    selectedCardBorder,
+    selectedLabelColor,
+    selectedDescColor,
+  } = getScreenColorTokens(isDark);
 
   const pickImage = async (useCamera: boolean) => {
     const permission = useCamera
