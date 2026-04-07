@@ -31,6 +31,10 @@ export default function ScanScreen() {
 
   const iconColor = isDark ? '#e5e5e5' : '#171717';
   const mutedColor = isDark ? '#a3a3a3' : '#737373';
+  const selectedCardBg = isDark ? '#111827' : '#f3f4f6';
+  const selectedCardBorder = isDark ? '#60a5fa' : '#2563eb';
+  const selectedLabelColor = isDark ? '#f9fafb' : '#111827';
+  const selectedDescColor = isDark ? '#d1d5db' : '#4b5563';
 
   const pickImage = async (useCamera: boolean) => {
     const permission = useCamera
@@ -98,15 +102,15 @@ export default function ScanScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="border-b border-border px-5 pb-4 pt-14">
+    <View className="bg-background flex-1">
+      <View className="border-border border-b px-5 pb-4 pt-14">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()} className="rounded-full p-1">
             <ArrowLeft size={22} color={iconColor} />
           </TouchableOpacity>
           <View>
-            <Text className="text-xl font-bold text-foreground">Scan Items</Text>
-            <Text className="text-xs text-muted-foreground">{monthTitle}</Text>
+            <Text className="text-foreground text-xl font-bold">Scan Items</Text>
+            <Text className="text-muted-foreground text-xs">{monthTitle}</Text>
           </View>
         </View>
       </View>
@@ -122,16 +126,16 @@ export default function ScanScreen() {
               />
             )}
             <ActivityIndicator size="large" />
-            <Text className="mt-4 text-base font-medium text-foreground">
+            <Text className="text-foreground mt-4 text-base font-medium">
               Analyzing image with AI...
             </Text>
-            <Text className="mt-1 text-sm text-muted-foreground">
+            <Text className="text-muted-foreground mt-1 text-sm">
               Extracting items, quantities, and prices
             </Text>
           </View>
         ) : (
           <>
-            <Text className="mb-3 text-sm font-semibold text-foreground">
+            <Text className="text-foreground mb-3 text-sm font-semibold">
               What are you scanning?
             </Text>
             <View className="mb-6 gap-2">
@@ -143,43 +147,56 @@ export default function ScanScreen() {
                   <TouchableOpacity
                     key={type.key}
                     onPress={() => setScanType(type.key)}
+                    activeOpacity={0.9}
+                    style={
+                      isSelected
+                        ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
+                        : undefined
+                    }
                     className={`flex-row items-center gap-3 rounded-xl border p-4 ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                      isSelected ? 'border-primary bg-card' : 'border-border bg-card'
                     }`}>
-                    <Icon size={22} color={isSelected ? iconColor : mutedColor} />
+                    <Icon size={22} color={isSelected ? selectedLabelColor : mutedColor} />
                     <View className="flex-1">
                       <Text
+                        style={isSelected ? { color: selectedLabelColor } : undefined}
                         className={`text-sm font-medium ${
                           isSelected ? 'text-foreground' : 'text-muted-foreground'
                         }`}>
                         {type.label}
                       </Text>
-                      <Text className="text-xs text-muted-foreground">{type.desc}</Text>
+                      <Text
+                        style={isSelected ? { color: selectedDescColor } : undefined}
+                        className={`text-xs ${
+                          isSelected ? 'text-foreground/70' : 'text-muted-foreground'
+                        }`}>
+                        {type.desc}
+                      </Text>
                     </View>
                     <View
                       className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
                         isSelected ? 'border-primary' : 'border-muted-foreground/30'
                       }`}>
-                      {isSelected && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                      {isSelected && <View className="bg-primary h-2.5 w-2.5 rounded-full" />}
                     </View>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            <Text className="mb-3 text-sm font-semibold text-foreground">Capture Image</Text>
+            <Text className="text-foreground mb-3 text-sm font-semibold">Capture Image</Text>
             <View className="gap-3">
               <TouchableOpacity
                 onPress={() => pickImage(true)}
-                className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4">
+                className="bg-primary flex-row items-center justify-center gap-2 rounded-xl py-4">
                 <Camera size={20} color={isDark ? '#0a0a0a' : '#fafafa'} />
-                <Text className="text-base font-semibold text-primary-foreground">Take Photo</Text>
+                <Text className="text-primary-foreground text-base font-semibold">Take Photo</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => pickImage(false)}
-                className="flex-row items-center justify-center gap-2 rounded-xl border border-border bg-card py-4">
+                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-4">
                 <Image size={20} color={iconColor} />
-                <Text className="text-base font-semibold text-foreground">Choose from Gallery</Text>
+                <Text className="text-foreground text-base font-semibold">Choose from Gallery</Text>
               </TouchableOpacity>
             </View>
           </>
