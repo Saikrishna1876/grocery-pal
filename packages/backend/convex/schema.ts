@@ -88,6 +88,7 @@ export default defineSchema({
     list_id: v.id('shared_lists'),
     email: v.optional(v.string()),
     token: v.string(),
+    is_multi_use: v.optional(v.boolean()),
     created_by: v.string(),
     created_at: v.number(),
     expires_at: v.number(),

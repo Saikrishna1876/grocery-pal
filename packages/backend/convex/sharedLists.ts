@@ -540,6 +540,7 @@ export const shareWithEmail = mutation({
       list_id: list._id,
       email,
       token: buildInviteToken(),
+      is_multi_use: false,
       created_by: user._id,
       created_at: Date.now(),
       expires_at: Date.now() + 1000 * 60 * 60 * 24 * 7,
@@ -555,18 +556,19 @@ export const shareWithEmail = mutation({
 export const createShareLink = mutation({
   args: {
     list_id: v.id('shared_lists'),
-    expires_in_days: v.optional(v.number()),
+    expires_in_days: v.optional(v.union(v.literal(3), v.literal(5), v.literal(10))),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const list = await getListById(ctx, args.list_id);
     await requireOwnerAccess(ctx, list._id, user._id);
 
-    const days = Math.max(1, Math.min(30, args.expires_in_days ?? 7));
+    const days = args.expires_in_days ?? 3;
     const now = Date.now();
     const inviteId = await ctx.db.insert('shared_list_invites', {
       list_id: list._id,
       token: buildInviteToken(),
+      is_multi_use: true,
       created_by: user._id,
       created_at: now,
       expires_at: now + days * 24 * 60 * 60 * 1000,
@@ -595,24 +597,36 @@ export const acceptInvite = mutation({
       throw new ConvexError('Invite not found.');
     }
 
-    if (invite.expires_at < Date.now()) {
-      throw new ConvexError('Invite has expired.');
-    }
-
-    if (invite.accepted_at) {
-      throw new ConvexError('Invite has already been used.');
-    }
-
     const list = await getListById(ctx, invite.list_id);
+    if (list.owner_id === user._id) {
+      throw new ConvexError('You already own this list.');
+    }
+
+    const existingMembership = await getMembership(ctx, list._id, user._id);
+    if (existingMembership) {
+      throw new ConvexError('You are already added to this list.');
+    }
+
+    if (invite.expires_at < Date.now()) {
+      throw new ConvexError('Invite token is expired.');
+    }
+
+    const isMultiUse = invite.is_multi_use === true;
+    if (!isMultiUse && invite.accepted_at) {
+      throw new ConvexError('Invite token is expired.');
+    }
+
     if (invite.email && invite.email.toLowerCase() !== user.email.toLowerCase()) {
       throw new ConvexError('Invite email does not match current user.');
     }
 
     const member = await upsertMember(ctx, list._id, user._id, invite.created_by, 'editor');
 
-    await ctx.db.patch(invite._id, {
-      accepted_at: Date.now(),
-    });
+    if (!isMultiUse) {
+      await ctx.db.patch(invite._id, {
+        accepted_at: Date.now(),
+      });
+    }
 
     await touchList(ctx, list._id);
     await writeActivity(ctx, list._id, user._id, 'invite_accepted');

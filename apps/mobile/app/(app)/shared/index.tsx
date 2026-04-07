@@ -135,32 +135,14 @@ export default function SharedListsHubScreen() {
             </View>
           </View>
           <TouchableOpacity
-            onPress={() => setShowCreateModal(true)}
-            className="bg-primary rounded-full px-3 py-2">
-            <View className="flex-row items-center gap-1.5">
-              <Plus size={14} color={isDark ? '#0a0a0a' : '#fafafa'} />
-              <Text className="text-primary-foreground text-xs font-semibold">New</Text>
-            </View>
+            onPress={copyJoinTip}
+            className="border-border bg-card rounded-full border p-2">
+            <Share2 size={16} color={iconColor} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <View className="mb-3 flex-row gap-2">
-          <TouchableOpacity
-            onPress={() => setShowJoinModal(true)}
-            className="border-border bg-card flex-1 flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3">
-            <Users size={16} color={iconColor} />
-            <Text className="text-foreground text-sm font-semibold">Join with Token</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={copyJoinTip}
-            className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3">
-            <Share2 size={16} color={iconColor} />
-            <Text className="text-foreground text-sm font-semibold">Help</Text>
-          </TouchableOpacity>
-        </View>
-
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 172 }}>
         {showLoader ? (
           <ActivityIndicator size="large" className="mt-20" />
         ) : waitingForFirstLoad ? (
@@ -215,6 +197,23 @@ export default function SharedListsHubScreen() {
           })
         )}
       </ScrollView>
+
+      <View className="border-border bg-background border-t px-5 pb-8 pt-3">
+        <View className="flex-row flex-wrap gap-3">
+          <TouchableOpacity
+            onPress={() => setShowJoinModal(true)}
+            className="border-border bg-card min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+            <Users size={16} color={iconColor} />
+            <Text className="text-foreground text-sm font-semibold">Join with Token</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowCreateModal(true)}
+            className="bg-primary min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5">
+            <Plus size={16} color={isDark ? '#0a0a0a' : '#fafafa'} />
+            <Text className="text-primary-foreground text-sm font-semibold">New List</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <Modal
         visible={showCreateModal}

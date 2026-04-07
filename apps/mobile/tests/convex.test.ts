@@ -707,6 +707,116 @@ describe('Convex backend auth + ownership', () => {
     expect(afterRemoval.items).toHaveLength(0);
   });
 
+  test('owner cannot join their own invite token and existing members cannot rejoin', async () => {
+    const t = createBackend();
+    const owner = await createAuthenticatedUser(t, 'owner-join@example.com', 'Owner Join');
+    const editor = await createAuthenticatedUser(t, 'editor-join@example.com', 'Editor Join');
+
+    const list = await owner.auth.mutation(api.sharedLists.create, {
+      name: 'Owner Join Guardrails',
+    });
+
+    const linkInvite = await owner.auth.mutation(api.sharedLists.createShareLink, {
+      list_id: list!._id,
+      expires_in_days: 3,
+    });
+
+    await expect(
+      owner.auth.mutation(api.sharedLists.acceptInvite, {
+        token: linkInvite!.token,
+      })
+    ).rejects.toThrow('You already own this list.');
+
+    await editor.auth.mutation(api.sharedLists.acceptInvite, {
+      token: linkInvite!.token,
+    });
+
+    await expect(
+      editor.auth.mutation(api.sharedLists.acceptInvite, {
+        token: linkInvite!.token,
+      })
+    ).rejects.toThrow('You are already added to this list.');
+  });
+
+  test('single-use invite token returns expired error once consumed by another user', async () => {
+    const t = createBackend();
+    const owner = await createAuthenticatedUser(t, 'single-owner@example.com', 'Single Owner');
+    const editor = await createAuthenticatedUser(t, 'single-editor@example.com', 'Single Editor');
+    const outsider = await createAuthenticatedUser(
+      t,
+      'single-outsider@example.com',
+      'Single Outsider'
+    );
+
+    const list = await owner.auth.mutation(api.sharedLists.create, {
+      name: 'Single Use Invite',
+    });
+
+    const emailInvite = await owner.auth.mutation(api.sharedLists.shareWithEmail, {
+      list_id: list!._id,
+      email: 'single-editor@example.com',
+    });
+
+    await editor.auth.mutation(api.sharedLists.acceptInvite, {
+      token: emailInvite!.token,
+    });
+
+    await expect(
+      outsider.auth.mutation(api.sharedLists.acceptInvite, {
+        token: emailInvite!.token,
+      })
+    ).rejects.toThrow('Invite token is expired.');
+  });
+
+  test('multi-use share token supports multiple users and only allows 3, 5, or 10 day expiries', async () => {
+    const t = createBackend();
+    const owner = await createAuthenticatedUser(t, 'multi-owner@example.com', 'Multi Owner');
+    const editorA = await createAuthenticatedUser(
+      t,
+      'multi-editor-a@example.com',
+      'Multi Editor A'
+    );
+    const editorB = await createAuthenticatedUser(
+      t,
+      'multi-editor-b@example.com',
+      'Multi Editor B'
+    );
+
+    const list = await owner.auth.mutation(api.sharedLists.create, {
+      name: 'Multi Token List',
+    });
+
+    const startTime = Date.now();
+    const linkInvite = await owner.auth.mutation(api.sharedLists.createShareLink, {
+      list_id: list!._id,
+      expires_in_days: 5,
+    });
+
+    expect(linkInvite?.is_multi_use).toBe(true);
+    expect((linkInvite?.expires_at ?? 0) - startTime).toBeGreaterThanOrEqual(
+      5 * 24 * 60 * 60 * 1000 - 2000
+    );
+
+    await editorA.auth.mutation(api.sharedLists.acceptInvite, {
+      token: linkInvite!.token,
+    });
+    await editorB.auth.mutation(api.sharedLists.acceptInvite, {
+      token: linkInvite!.token,
+    });
+
+    const detail = await owner.auth.query(api.sharedLists.getById, {
+      id: list!._id,
+    });
+    expect(detail.members).toHaveLength(3);
+
+    await expect(
+      owner.auth.mutation(api.sharedLists.createShareLink, {
+        list_id: list!._id,
+        expires_in_days: 7,
+      })
+    ).rejects.toThrow('Expected one of literal, literal, literal');
+  });
+
   test('owner can convert only fully completed shared list into an order', async () => {
     const t = createBackend();
     const owner = await createAuthenticatedUser(t, 'convert-owner@example.com', 'Convert Owner');

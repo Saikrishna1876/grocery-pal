@@ -57,6 +57,8 @@ type OrderCategory = {
   name: string;
 };
 
+const SHARE_TOKEN_EXPIRY_OPTIONS = [3, 5, 10] as const;
+
 export default function SharedListDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -101,6 +103,8 @@ export default function SharedListDetailScreen() {
   const [unit, setUnit] = React.useState('unit');
   const [price, setPrice] = React.useState('0');
   const [inviteEmail, setInviteEmail] = React.useState('');
+  const [shareTokenDays, setShareTokenDays] =
+    React.useState<(typeof SHARE_TOKEN_EXPIRY_OPTIONS)[number]>(3);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<Id<'order_categories'> | null>(
     null
   );
@@ -262,7 +266,7 @@ export default function SharedListDetailScreen() {
     }
 
     try {
-      const invite = await createShareLink({ list_id: listId });
+      const invite = await createShareLink({ list_id: listId, expires_in_days: shareTokenDays });
       const token = invite?.token ?? '';
       if (!token) {
         throw new Error('Invite token was not returned.');
@@ -349,24 +353,10 @@ export default function SharedListDetailScreen() {
               </Text>
             </View>
           </View>
-          <View className="flex-row items-center gap-1">
-            {isOwner && (
-              <TouchableOpacity
-                onPress={() => setShowShareModal(true)}
-                className="border-border bg-card rounded-full border p-2">
-                <UserPlus size={16} color={iconColor} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              onPress={() => setShowAddModal(true)}
-              className="bg-primary rounded-full p-2">
-              <Plus size={16} color={isDark ? '#0a0a0a' : '#fafafa'} />
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 130 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 196 }}>
         {showLoader ? (
           <ActivityIndicator size="large" className="mt-20" />
         ) : waitingForFirstLoad ? (
@@ -422,24 +412,6 @@ export default function SharedListDetailScreen() {
           ))
         )}
 
-        {isOwner && (
-          <TouchableOpacity
-            disabled={!detail?.canConvertToOrder}
-            onPress={() => setShowConvertModal(true)}
-            className={`mt-4 rounded-xl py-3 ${detail?.canConvertToOrder ? 'bg-primary' : 'bg-secondary'}`}>
-            <Text
-              className={`text-center font-semibold ${
-                detail?.canConvertToOrder ? 'text-primary-foreground' : 'text-muted-foreground'
-              }`}>
-              {detail?.list.converted_order_id
-                ? 'Already Converted'
-                : detail?.canConvertToOrder
-                  ? 'Convert to Order'
-                  : 'Complete all items to convert'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
         <TouchableOpacity
           onPress={onRestoreLastDeleted}
           className="border-border bg-card mt-3 flex-row items-center justify-center gap-2 rounded-xl border py-3">
@@ -449,6 +421,46 @@ export default function SharedListDetailScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <View className="border-border bg-background border-t px-5 pb-8 pt-3">
+        <View className="flex-row flex-wrap gap-3">
+          {isOwner && (
+            <TouchableOpacity
+              onPress={() => setShowShareModal(true)}
+              className="border-border bg-card min-w-[100px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+              <UserPlus size={16} color={iconColor} />
+              <Text className="text-foreground text-sm font-semibold">Share</Text>
+            </TouchableOpacity>
+          )}
+
+          {isOwner && (
+            <TouchableOpacity
+              disabled={!detail?.canConvertToOrder}
+              onPress={() => setShowConvertModal(true)}
+              className={`min-w-[120px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
+                detail?.canConvertToOrder ? 'bg-primary' : 'bg-secondary'
+              }`}>
+              <Text
+                className={`text-sm font-semibold ${
+                  detail?.canConvertToOrder ? 'text-primary-foreground' : 'text-muted-foreground'
+                }`}>
+                {detail?.list.converted_order_id
+                  ? 'Converted'
+                  : detail?.canConvertToOrder
+                    ? 'Convert'
+                    : 'Complete Items'}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            onPress={() => setShowAddModal(true)}
+            className="border-border bg-card min-w-[100px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+            <Plus size={16} color={iconColor} />
+            <Text className="text-foreground text-sm font-semibold">Add Item</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <Modal
         visible={showAddModal || showEditModal}
@@ -604,6 +616,33 @@ export default function SharedListDetailScreen() {
               autoCapitalize="none"
               className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
             />
+            <Text className="text-muted-foreground mt-4 text-xs">Share token expiry</Text>
+            <View className="mt-2 flex-row gap-2">
+              {SHARE_TOKEN_EXPIRY_OPTIONS.map((days) => {
+                const selected = shareTokenDays === days;
+
+                return (
+                  <TouchableOpacity
+                    key={days}
+                    onPress={() => setShareTokenDays(days)}
+                    activeOpacity={0.9}
+                    style={
+                      selected
+                        ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
+                        : undefined
+                    }
+                    className={`rounded-full border px-4 py-2 ${
+                      selected ? 'border-primary bg-card' : 'border-border bg-card'
+                    }`}>
+                    <Text
+                      style={selected ? { color: selectedLabelColor } : undefined}
+                      className="text-foreground text-xs font-semibold">
+                      {days} days
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
             <View className="mt-4 gap-2">
               <TouchableOpacity onPress={onShareWithEmail} className="bg-primary rounded-xl py-3">
                 <Text className="text-primary-foreground text-center font-semibold">
