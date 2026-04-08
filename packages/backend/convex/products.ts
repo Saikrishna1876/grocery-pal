@@ -1,6 +1,4 @@
 import { ConvexError, v } from 'convex/values';
-
-import type { Id } from './_generated/dataModel';
 import { internalQuery, mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import {

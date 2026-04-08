@@ -32,7 +32,7 @@ type ReaderCtx = Pick<QueryCtx, 'db'>;
 export async function listOrdersWithItemsForMonth(
   ctx: ReaderCtx,
   userId: UserId,
-  monthId: Id<'months'>
+  monthId: Id<'months'>,
 ) {
   const orders = await ctx.db
     .query('orders')
@@ -48,11 +48,11 @@ export async function listOrdersWithItemsForMonth(
         .collect();
       const total = items.reduce(
         (sum: number, item: Doc<'order_items'>) => sum + item.price * item.quantity,
-        0
+        0,
       );
 
       return { ...order, id: order._id, items, total };
-    })
+    }),
   );
 
   return orderList;
@@ -67,7 +67,7 @@ export async function getMonthAnalytics(ctx: ReaderCtx, userId: UserId, monthId:
   const orders = await listOrdersWithItemsForMonth(ctx, userId, monthId);
   const products = await listAccessibleProducts(ctx, userId);
   const productsById = new Map<string, Doc<'products'>>(
-    products.map((product: Doc<'products'>) => [product._id, product])
+    products.map((product: Doc<'products'>) => [product._id, product]),
   );
 
   let total = 0;
@@ -82,7 +82,7 @@ export async function getMonthAnalytics(ctx: ReaderCtx, userId: UserId, monthId:
 
     byOrderCategory.set(
       orderCategoryName,
-      (byOrderCategory.get(orderCategoryName) ?? 0) + orderTotal
+      (byOrderCategory.get(orderCategoryName) ?? 0) + orderTotal,
     );
 
     for (const item of order.items) {
@@ -144,7 +144,7 @@ export async function getMonthSummaries(ctx: ReaderCtx, userId: UserId) {
         order_count: analytics.order_count,
         item_count: analytics.item_count,
       };
-    })
+    }),
   );
 }
 

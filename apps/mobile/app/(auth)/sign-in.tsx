@@ -1,5 +1,3 @@
-import { signInEmail, signUpEmail } from '@/lib/auth/client';
-import { getErrorMessage } from '@/lib/error';
 import { ArrowRight, Lock, Mail, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -13,6 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { signInEmail, signUpEmail } from '@/lib/auth/client';
+import { getErrorMessage } from '@/lib/error';
 
 type AuthMode = 'sign-in' | 'sign-up';
 
@@ -88,12 +88,14 @@ export default function SignInScreen() {
     <View className="bg-background flex-1">
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <ScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          contentContainerStyle={{ padding: 20, paddingTop: 96, paddingBottom: 260 }}>
+          contentContainerStyle={{ padding: 20, paddingTop: 96, paddingBottom: 260 }}
+        >
           <Text className="text-foreground text-2xl font-bold">Grocery Pal</Text>
           <Text className="text-muted-foreground mt-2 text-sm">
             Sign in to access your private months, orders, analytics, and product catalog.
@@ -107,11 +109,13 @@ export default function SignInScreen() {
               }}
               className={`flex-1 rounded-xl px-4 py-3 ${
                 mode === 'sign-in' ? 'bg-card' : 'bg-transparent'
-              }`}>
+              }`}
+            >
               <Text
                 className={`text-center text-sm font-semibold ${
                   mode === 'sign-in' ? 'text-foreground' : 'text-muted-foreground'
-                }`}>
+                }`}
+              >
                 Sign In
               </Text>
             </TouchableOpacity>
@@ -122,11 +126,13 @@ export default function SignInScreen() {
               }}
               className={`flex-1 rounded-xl px-4 py-3 ${
                 mode === 'sign-up' ? 'bg-card' : 'bg-transparent'
-              }`}>
+              }`}
+            >
               <Text
                 className={`text-center text-sm font-semibold ${
                   mode === 'sign-up' ? 'text-foreground' : 'text-muted-foreground'
-                }`}>
+                }`}
+              >
                 Sign Up
               </Text>
             </TouchableOpacity>
@@ -195,7 +201,8 @@ export default function SignInScreen() {
           <TouchableOpacity
             disabled={submitting}
             onPress={submit}
-            className="bg-primary mt-6 flex-row items-center justify-center gap-2 rounded-2xl py-4">
+            className="bg-primary mt-6 flex-row items-center justify-center gap-2 rounded-2xl py-4"
+          >
             {submitting ? (
               <ActivityIndicator color={isDark ? '#0a0a0a' : '#fafafa'} />
             ) : (

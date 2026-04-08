@@ -1,8 +1,8 @@
 import { ConvexError, v } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';
-import { internalMutation, mutation, query } from './_generated/server';
 import type { MutationCtx, QueryCtx } from './_generated/server';
+import { internalMutation, mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { getLastUsedOrderCategory } from './domain';
 
@@ -22,7 +22,7 @@ function normalizeCategoryName(name: string) {
 
 function compareCategories(
   a: { name: string; systemKey?: string },
-  b: { name: string; systemKey?: string }
+  b: { name: string; systemKey?: string },
 ) {
   const aPinned = a.systemKey === UNCATEGORIZED_KEY ? 0 : a.systemKey ? 1 : 2;
   const bPinned = b.systemKey === UNCATEGORIZED_KEY ? 0 : b.systemKey ? 1 : 2;
@@ -47,7 +47,7 @@ async function getCategoryByNormalizedName(ctx: ReaderCtx, userId: string, norma
   return (await ctx.db
     .query('order_categories')
     .withIndex('by_user_normalized_name', (q) =>
-      q.eq('userId', userId).eq('normalizedName', normalizedName)
+      q.eq('userId', userId).eq('normalizedName', normalizedName),
     )
     .unique()) as Doc<'order_categories'> | null;
 }
@@ -104,7 +104,7 @@ export async function ensureDefaultOrderCategories(ctx: WriterCtx, userId: strin
   }
 
   const uncategorized = existingCategories.find(
-    (category) => category.systemKey === UNCATEGORIZED_KEY
+    (category) => category.systemKey === UNCATEGORIZED_KEY,
   );
   if (!uncategorized) {
     existingCategories.push(
@@ -112,8 +112,8 @@ export async function ensureDefaultOrderCategories(ctx: WriterCtx, userId: strin
         ctx,
         userId,
         DEFAULT_CATEGORY_LABELS[UNCATEGORIZED_KEY],
-        UNCATEGORIZED_KEY
-      )
+        UNCATEGORIZED_KEY,
+      ),
     );
   }
 
@@ -251,7 +251,7 @@ export const update = mutation({
     const linkedOrders = await ctx.db
       .query('orders')
       .withIndex('by_user_category_id', (q) =>
-        q.eq('userId', user._id).eq('category_id', category._id)
+        q.eq('userId', user._id).eq('category_id', category._id),
       )
       .collect();
 
@@ -281,7 +281,7 @@ export const remove = mutation({
     const linkedOrder = await ctx.db
       .query('orders')
       .withIndex('by_user_category_id', (q) =>
-        q.eq('userId', user._id).eq('category_id', category._id)
+        q.eq('userId', user._id).eq('category_id', category._id),
       )
       .first();
 

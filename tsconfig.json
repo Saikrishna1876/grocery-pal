@@ -5,20 +5,12 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "paths": {
-      "@/*": [
-        "*"
-      ]
+      "@/*": ["*"]
     }
   },
-  "include": [
-    "apps/mobile/**/*.ts",
-    "apps/mobile/**/*.tsx",
-    "packages/backend/**/*.ts"
-  ],
+  "include": ["apps/mobile/**/*.ts", "apps/mobile/**/*.tsx", "packages/backend/**/*.ts"],
   "exclude": [
     "**/node_modules",
     "apps/mobile/tests",

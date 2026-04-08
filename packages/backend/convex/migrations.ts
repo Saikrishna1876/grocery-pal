@@ -1,5 +1,5 @@
-import { mutation } from './_generated/server';
 import { v } from 'convex/values';
+import { mutation } from './_generated/server';
 
 export const importProducts = mutation({
   args: {
@@ -13,7 +13,7 @@ export const importProducts = mutation({
         updated_at: v.optional(v.string()),
         // We might want to pass the old ID to return a mapping, but for now we just return the new ID
         originalId: v.string(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -36,7 +36,7 @@ export const importOrderCategories = mutation({
         normalizedName: v.string(),
         systemKey: v.optional(v.string()),
         originalId: v.string(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -58,7 +58,7 @@ export const importMonths = mutation({
         year: v.number(),
         month: v.number(),
         originalId: v.string(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -83,7 +83,7 @@ export const importOrders = mutation({
         category_id: v.optional(v.id('order_categories')),
         category_name: v.optional(v.string()),
         originalId: v.string(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -107,7 +107,7 @@ export const importOrderItems = mutation({
         quantity: v.number(),
         unit: v.string(),
         price: v.number(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {

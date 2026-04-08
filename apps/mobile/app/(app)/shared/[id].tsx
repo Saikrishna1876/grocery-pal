@@ -1,8 +1,3 @@
-import { api } from '@/convex/_generated/api';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
-import { useCachedQueryValue } from '@/lib/cached-query';
-import { getErrorMessage } from '@/lib/error';
-import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -15,8 +10,8 @@ import {
   Share2,
   Trash2,
   Undo2,
-  Users,
   UserPlus,
+  Users,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -33,6 +28,11 @@ import {
   View,
 } from 'react-native';
 import { AppText as Text } from '@/components/app-text';
+import { api } from '@/convex/_generated/api';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
+import { getErrorMessage } from '@/lib/error';
+import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 
 type SharedListDetail = {
   list: {
@@ -131,11 +131,11 @@ export default function SharedListDetailScreen() {
   const [shareTokenDays, setShareTokenDays] =
     React.useState<(typeof SHARE_TOKEN_EXPIRY_OPTIONS)[number]>(3);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<Id<'order_categories'> | null>(
-    null
+    null,
   );
   const [editingItemId, setEditingItemId] = React.useState<Id<'shared_list_items'> | null>(null);
   const [completingItemId, setCompletingItemId] = React.useState<Id<'shared_list_items'> | null>(
-    null
+    null,
   );
   const [completionPrice, setCompletionPrice] = React.useState('0');
   const [completionQuantity, setCompletionQuantity] = React.useState('1');
@@ -183,7 +183,7 @@ export default function SharedListDetailScreen() {
     } catch (error: unknown) {
       Alert.alert(
         'Unable to add item',
-        getErrorMessage(error, 'Please check the values and try again.')
+        getErrorMessage(error, 'Please check the values and try again.'),
       );
     } finally {
       setSaving(false);
@@ -203,7 +203,7 @@ export default function SharedListDetailScreen() {
     } catch (error: unknown) {
       Alert.alert(
         'Unable to update item',
-        getErrorMessage(error, 'Please check the values and try again.')
+        getErrorMessage(error, 'Please check the values and try again.'),
       );
     } finally {
       setSaving(false);
@@ -363,7 +363,7 @@ export default function SharedListDetailScreen() {
 
   const filteredProducts = productSearchQuery.trim()
     ? products.filter((product) =>
-        product.name.toLowerCase().includes(productSearchQuery.trim().toLowerCase())
+        product.name.toLowerCase().includes(productSearchQuery.trim().toLowerCase()),
       )
     : [];
 
@@ -413,7 +413,8 @@ export default function SharedListDetailScreen() {
           </View>
           <TouchableOpacity
             onPress={() => setShowMembersModal(true)}
-            className="border-border bg-card flex-row items-center gap-2 rounded-full border px-3 py-2">
+            className="border-border bg-card flex-row items-center gap-2 rounded-full border px-3 py-2"
+          >
             <Users size={14} color={iconColor} />
             <Text className="text-foreground text-xs font-semibold">{members.length}</Text>
           </TouchableOpacity>
@@ -441,7 +442,8 @@ export default function SharedListDetailScreen() {
                     numberOfLines={2}
                     className={`text-base font-semibold ${
                       item.completed ? 'text-muted-foreground line-through' : 'text-foreground'
-                    }`}>
+                    }`}
+                  >
                     {item.name}
                   </Text>
                   <Text numberOfLines={2} className="text-muted-foreground mt-0.5 text-xs">
@@ -456,23 +458,27 @@ export default function SharedListDetailScreen() {
                 <View className="flex-row items-center gap-2">
                   <TouchableOpacity
                     onPress={() => toggleCompleted(item)}
-                    className={`rounded-full px-2 py-1 ${item.completed ? 'bg-green-500/15' : 'bg-secondary'}`}>
+                    className={`rounded-full px-2 py-1 ${item.completed ? 'bg-green-500/15' : 'bg-secondary'}`}
+                  >
                     <View className="flex-row items-center gap-1">
                       <Check size={12} color={item.completed ? '#22c55e' : mutedColor} />
                       <Text
-                        className={`text-xs ${item.completed ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        className={`text-xs ${item.completed ? 'text-green-500' : 'text-muted-foreground'}`}
+                      >
                         {item.completed ? 'Done' : 'Open'}
                       </Text>
                     </View>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => openEdit(item)}
-                    className="border-border bg-background rounded-full border p-2">
+                    className="border-border bg-background rounded-full border p-2"
+                  >
                     <Copy size={14} color={iconColor} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => deleteItem(item._id)}
-                    className="rounded-full border border-red-500/30 bg-red-500/10 p-2">
+                    className="rounded-full border border-red-500/30 bg-red-500/10 p-2"
+                  >
                     <Trash2 size={14} color="#ef4444" />
                   </TouchableOpacity>
                 </View>
@@ -483,7 +489,8 @@ export default function SharedListDetailScreen() {
 
         <TouchableOpacity
           onPress={onRestoreLastDeleted}
-          className="border-border bg-card mt-3 flex-row items-center justify-center gap-2 rounded-xl border py-3">
+          className="border-border bg-card mt-3 flex-row items-center justify-center gap-2 rounded-xl border py-3"
+        >
           <Undo2 size={14} color={iconColor} />
           <Text className="text-foreground text-xs font-medium">
             Restore deleted item (next step)
@@ -496,7 +503,8 @@ export default function SharedListDetailScreen() {
           {isOwner && (
             <TouchableOpacity
               onPress={() => setShowShareModal(true)}
-              className="border-border bg-card min-w-[100px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+              className="border-border bg-card min-w-[100px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
+            >
               <UserPlus size={16} color={iconColor} />
               <Text className="text-foreground text-sm font-semibold">Share</Text>
             </TouchableOpacity>
@@ -508,11 +516,13 @@ export default function SharedListDetailScreen() {
               onPress={() => setShowConvertModal(true)}
               className={`min-w-[120px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
                 detail?.canConvertToOrder ? 'bg-primary' : 'bg-secondary'
-              }`}>
+              }`}
+            >
               <Text
                 className={`text-sm font-semibold ${
                   detail?.canConvertToOrder ? 'text-primary-foreground' : 'text-muted-foreground'
-                }`}>
+                }`}
+              >
                 {detail?.list.converted_order_id
                   ? 'Converted'
                   : detail?.canConvertToOrder
@@ -524,7 +534,8 @@ export default function SharedListDetailScreen() {
 
           <TouchableOpacity
             onPress={() => setShowAddModal(true)}
-            className="border-border bg-card min-w-[100px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+            className="border-border bg-card min-w-[100px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
+          >
             <Plus size={16} color={iconColor} />
             <Text className="text-foreground text-sm font-semibold">Add Item</Text>
           </TouchableOpacity>
@@ -539,7 +550,8 @@ export default function SharedListDetailScreen() {
           setShowAddModal(false);
           setShowEditModal(false);
           resetItemForm();
-        }}>
+        }}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -551,10 +563,12 @@ export default function SharedListDetailScreen() {
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="w-full">
+            className="w-full"
+          >
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingTop: 8 }}>
+              contentContainerStyle={{ paddingTop: 8 }}
+            >
               <View className="border-border bg-background border-t px-5 pb-8 pt-5">
                 <Text className="text-foreground text-base font-semibold">
                   {showEditModal ? 'Update Item' : 'Add Item'}
@@ -581,7 +595,8 @@ export default function SharedListDetailScreen() {
                             <TouchableOpacity
                               key={product._id}
                               onPress={() => selectProductForAdd(product)}
-                              className="border-border border-b px-3 py-3 last:border-b-0">
+                              className="border-border border-b px-3 py-3 last:border-b-0"
+                            >
                               <Text className="text-foreground text-sm font-medium">
                                 {product.name}
                               </Text>
@@ -634,17 +649,20 @@ export default function SharedListDetailScreen() {
                       setShowEditModal(false);
                       resetItemForm();
                     }}
-                    className="bg-secondary flex-1 rounded-xl py-3">
+                    className="bg-secondary flex-1 rounded-xl py-3"
+                  >
                     <Text className="text-foreground text-center font-medium">Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     disabled={saving}
                     onPress={showEditModal ? submitEdit : submitAdd}
-                    className={`flex-1 rounded-xl py-3 ${saving ? 'bg-secondary' : 'bg-primary'}`}>
+                    className={`flex-1 rounded-xl py-3 ${saving ? 'bg-secondary' : 'bg-primary'}`}
+                  >
                     <Text
                       className={`text-center font-semibold ${
                         saving ? 'text-muted-foreground' : 'text-primary-foreground'
-                      }`}>
+                      }`}
+                    >
                       {saving ? 'Saving...' : 'Save'}
                     </Text>
                   </TouchableOpacity>
@@ -662,7 +680,8 @@ export default function SharedListDetailScreen() {
         onRequestClose={() => {
           setShowCompleteModal(false);
           setCompletingItemId(null);
-        }}>
+        }}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -673,10 +692,12 @@ export default function SharedListDetailScreen() {
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="w-full">
+            className="w-full"
+          >
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingTop: 8 }}>
+              contentContainerStyle={{ paddingTop: 8 }}
+            >
               <View className="border-border bg-background border-t px-5 pb-8 pt-5">
                 <Text className="text-foreground text-base font-semibold">
                   Tick Item and Set Price
@@ -708,17 +729,20 @@ export default function SharedListDetailScreen() {
                       setShowCompleteModal(false);
                       setCompletingItemId(null);
                     }}
-                    className="bg-secondary flex-1 rounded-xl py-3">
+                    className="bg-secondary flex-1 rounded-xl py-3"
+                  >
                     <Text className="text-foreground text-center font-medium">Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     disabled={completing}
                     onPress={submitCompletionWithPrice}
-                    className={`flex-1 rounded-xl py-3 ${completing ? 'bg-secondary' : 'bg-primary'}`}>
+                    className={`flex-1 rounded-xl py-3 ${completing ? 'bg-secondary' : 'bg-primary'}`}
+                  >
                     <Text
                       className={`text-center font-semibold ${
                         completing ? 'text-muted-foreground' : 'text-primary-foreground'
-                      }`}>
+                      }`}
+                    >
                       {completing ? 'Saving...' : 'Complete'}
                     </Text>
                   </TouchableOpacity>
@@ -733,7 +757,8 @@ export default function SharedListDetailScreen() {
         visible={showMembersModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowMembersModal(false)}>
+        onRequestClose={() => setShowMembersModal(false)}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -750,7 +775,8 @@ export default function SharedListDetailScreen() {
                 {members.map((member) => (
                   <View
                     key={member._id}
-                    className="border-border bg-card flex-row items-center justify-between rounded-xl border px-3 py-3">
+                    className="border-border bg-card flex-row items-center justify-between rounded-xl border px-3 py-3"
+                  >
                     <View className="mr-3 flex-1">
                       <Text className="text-foreground text-sm font-semibold">
                         {member.user_name || member.user_email || 'Unknown user'}
@@ -767,10 +793,12 @@ export default function SharedListDetailScreen() {
                       }
                       className={`rounded-full border px-3 py-1.5 ${
                         member.role === 'owner' ? 'border-primary bg-card' : 'border-border bg-card'
-                      }`}>
+                      }`}
+                    >
                       <Text
                         style={member.role === 'owner' ? { color: selectedLabelColor } : undefined}
-                        className="text-foreground text-xs font-semibold">
+                        className="text-foreground text-xs font-semibold"
+                      >
                         {member.role === 'owner' ? 'Owner' : 'Editor'}
                       </Text>
                     </View>
@@ -781,7 +809,8 @@ export default function SharedListDetailScreen() {
 
             <TouchableOpacity
               onPress={() => setShowMembersModal(false)}
-              className="bg-primary mt-4 rounded-xl py-3">
+              className="bg-primary mt-4 rounded-xl py-3"
+            >
               <Text className="text-primary-foreground text-center font-semibold">Done</Text>
             </TouchableOpacity>
           </View>
@@ -792,7 +821,8 @@ export default function SharedListDetailScreen() {
         visible={showShareModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowShareModal(false)}>
+        onRequestClose={() => setShowShareModal(false)}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -800,10 +830,12 @@ export default function SharedListDetailScreen() {
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="w-full">
+            className="w-full"
+          >
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingTop: 8 }}>
+              contentContainerStyle={{ paddingTop: 8 }}
+            >
               <View className="border-border bg-background border-t px-5 pb-8 pt-5">
                 <Text className="text-foreground text-base font-semibold">Share List</Text>
                 <TextInput
@@ -831,10 +863,12 @@ export default function SharedListDetailScreen() {
                         }
                         className={`rounded-full border px-4 py-2 ${
                           selected ? 'border-primary bg-card' : 'border-border bg-card'
-                        }`}>
+                        }`}
+                      >
                         <Text
                           style={selected ? { color: selectedLabelColor } : undefined}
-                          className="text-foreground text-xs font-semibold">
+                          className="text-foreground text-xs font-semibold"
+                        >
                           {days} days
                         </Text>
                       </TouchableOpacity>
@@ -844,14 +878,16 @@ export default function SharedListDetailScreen() {
                 <View className="mt-4 gap-2">
                   <TouchableOpacity
                     onPress={onShareWithEmail}
-                    className="bg-primary rounded-xl py-3">
+                    className="bg-primary rounded-xl py-3"
+                  >
                     <Text className="text-primary-foreground text-center font-semibold">
                       Invite by Email
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={onCreateShareLink}
-                    className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-3">
+                    className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-3"
+                  >
                     <Share2 size={14} color={iconColor} />
                     <Text className="text-foreground font-semibold">Create Share Token</Text>
                   </TouchableOpacity>
@@ -866,7 +902,8 @@ export default function SharedListDetailScreen() {
         visible={showConvertModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowConvertModal(false)}>
+        onRequestClose={() => setShowConvertModal(false)}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -881,7 +918,8 @@ export default function SharedListDetailScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingTop: 14, paddingRight: 8 }}>
+              contentContainerStyle={{ gap: 8, paddingTop: 14, paddingRight: 8 }}
+            >
               {categories.map((category) => {
                 const selected = selectedCategoryId === category._id;
                 return (
@@ -896,10 +934,12 @@ export default function SharedListDetailScreen() {
                     }
                     className={`rounded-full border px-4 py-2 ${
                       selected ? 'border-primary bg-card' : 'border-border bg-card'
-                    }`}>
+                    }`}
+                  >
                     <Text
                       style={selected ? { color: selectedLabelColor } : undefined}
-                      className="text-foreground text-xs font-medium">
+                      className="text-foreground text-xs font-medium"
+                    >
                       {category.name}
                     </Text>
                   </TouchableOpacity>
@@ -910,7 +950,8 @@ export default function SharedListDetailScreen() {
             <View className="mt-4 flex-row gap-2">
               <TouchableOpacity
                 onPress={() => setShowConvertModal(false)}
-                className="bg-secondary flex-1 rounded-xl py-3">
+                className="bg-secondary flex-1 rounded-xl py-3"
+              >
                 <Text className="text-foreground text-center font-medium">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={onConvert} className="bg-primary flex-1 rounded-xl py-3">

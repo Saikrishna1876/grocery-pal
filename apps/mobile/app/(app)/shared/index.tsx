@@ -1,7 +1,3 @@
-import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
-import { useCachedQueryValue } from '@/lib/cached-query';
-import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2, Plus, Share2, Users } from 'lucide-react-native';
@@ -20,6 +16,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
+import { getErrorMessage } from '@/lib/error';
 
 type SharedListSummary = {
   _id: Id<'shared_lists'>;
@@ -37,7 +37,7 @@ export default function SharedListsHubScreen() {
     (listId: string) => {
       pushRoute(['', 'shared', listId].join('/'));
     },
-    [pushRoute]
+    [pushRoute],
   );
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -138,7 +138,8 @@ export default function SharedListsHubScreen() {
           </View>
           <TouchableOpacity
             onPress={copyJoinTip}
-            className="border-border bg-card rounded-full border p-2">
+            className="border-border bg-card rounded-full border p-2"
+          >
             <Share2 size={16} color={iconColor} />
           </TouchableOpacity>
         </View>
@@ -167,7 +168,8 @@ export default function SharedListsHubScreen() {
               <TouchableOpacity
                 key={list._id}
                 onPress={() => openList(list._id)}
-                className="border-border bg-card mb-2 rounded-xl border p-4">
+                className="border-border bg-card mb-2 rounded-xl border p-4"
+              >
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
                     <Text className="text-foreground text-base font-semibold">{list.name}</Text>
@@ -177,9 +179,11 @@ export default function SharedListsHubScreen() {
                     </Text>
                   </View>
                   <View
-                    className={`rounded-full px-2 py-1 ${done ? 'bg-green-500/15' : 'bg-secondary'}`}>
+                    className={`rounded-full px-2 py-1 ${done ? 'bg-green-500/15' : 'bg-secondary'}`}
+                  >
                     <Text
-                      className={`text-xs font-medium ${done ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      className={`text-xs font-medium ${done ? 'text-green-500' : 'text-muted-foreground'}`}
+                    >
                       {done ? 'Ready' : `${list.remainingItems} left`}
                     </Text>
                   </View>
@@ -204,13 +208,15 @@ export default function SharedListsHubScreen() {
         <View className="flex-row flex-wrap gap-3">
           <TouchableOpacity
             onPress={() => setShowJoinModal(true)}
-            className="border-border bg-card min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+            className="border-border bg-card min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
+          >
             <Users size={16} color={iconColor} />
             <Text className="text-foreground text-sm font-semibold">Join with Token</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
-            className="bg-primary min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5">
+            className="bg-primary min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5"
+          >
             <Plus size={16} color={isDark ? '#0a0a0a' : '#fafafa'} />
             <Text className="text-primary-foreground text-sm font-semibold">New List</Text>
           </TouchableOpacity>
@@ -221,7 +227,8 @@ export default function SharedListsHubScreen() {
         visible={showCreateModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowCreateModal(false)}>
+        onRequestClose={() => setShowCreateModal(false)}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -229,10 +236,12 @@ export default function SharedListsHubScreen() {
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="w-full">
+            className="w-full"
+          >
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingTop: 8 }}>
+              contentContainerStyle={{ paddingTop: 8 }}
+            >
               <View className="border-border bg-background border-t px-5 pb-8 pt-5">
                 <Text className="text-foreground text-base font-semibold">Create Shared List</Text>
                 <TextInput
@@ -252,17 +261,20 @@ export default function SharedListsHubScreen() {
                 <View className="mt-4 flex-row gap-2">
                   <TouchableOpacity
                     onPress={() => setShowCreateModal(false)}
-                    className="bg-secondary flex-1 rounded-xl py-3">
+                    className="bg-secondary flex-1 rounded-xl py-3"
+                  >
                     <Text className="text-foreground text-center font-medium">Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     disabled={creating}
                     onPress={onCreate}
-                    className={`flex-1 rounded-xl py-3 ${creating ? 'bg-secondary' : 'bg-primary'}`}>
+                    className={`flex-1 rounded-xl py-3 ${creating ? 'bg-secondary' : 'bg-primary'}`}
+                  >
                     <Text
                       className={`text-center font-semibold ${
                         creating ? 'text-muted-foreground' : 'text-primary-foreground'
-                      }`}>
+                      }`}
+                    >
                       {creating ? 'Creating...' : 'Create'}
                     </Text>
                   </TouchableOpacity>
@@ -277,7 +289,8 @@ export default function SharedListsHubScreen() {
         visible={showJoinModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowJoinModal(false)}>
+        onRequestClose={() => setShowJoinModal(false)}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             className="flex-1 bg-black/40"
@@ -285,10 +298,12 @@ export default function SharedListsHubScreen() {
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="w-full">
+            className="w-full"
+          >
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingTop: 8 }}>
+              contentContainerStyle={{ paddingTop: 8 }}
+            >
               <View className="border-border bg-background border-t px-5 pb-8 pt-5">
                 <Text className="text-foreground text-base font-semibold">
                   Join with Invite Token
@@ -307,17 +322,20 @@ export default function SharedListsHubScreen() {
                 <View className="mt-4 flex-row gap-2">
                   <TouchableOpacity
                     onPress={() => setShowJoinModal(false)}
-                    className="bg-secondary flex-1 rounded-xl py-3">
+                    className="bg-secondary flex-1 rounded-xl py-3"
+                  >
                     <Text className="text-foreground text-center font-medium">Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     disabled={joining}
                     onPress={onJoinWithToken}
-                    className={`flex-1 rounded-xl py-3 ${joining ? 'bg-secondary' : 'bg-primary'}`}>
+                    className={`flex-1 rounded-xl py-3 ${joining ? 'bg-secondary' : 'bg-primary'}`}
+                  >
                     <Text
                       className={`text-center font-semibold ${
                         joining ? 'text-muted-foreground' : 'text-primary-foreground'
-                      }`}>
+                      }`}
+                    >
                       {joining ? 'Joining...' : 'Join'}
                     </Text>
                   </TouchableOpacity>

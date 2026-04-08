@@ -105,11 +105,13 @@ export default function ProfileScreen() {
                   }
                   className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 ${
                     isSelected ? 'border-primary bg-background' : 'border-border bg-background'
-                  }`}>
+                  }`}
+                >
                   <Icon size={14} color={isSelected ? selectedLabelColor : iconColor} />
                   <Text
                     style={isSelected ? { color: selectedLabelColor } : undefined}
-                    className="text-foreground text-xs font-semibold">
+                    className="text-foreground text-xs font-semibold"
+                  >
                     {option.label}
                   </Text>
                 </TouchableOpacity>
@@ -121,7 +123,8 @@ export default function ProfileScreen() {
         <TouchableOpacity
           disabled={signingOut}
           onPress={handleSignOut}
-          className="mt-5 flex-row items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-3.5">
+          className="mt-5 flex-row items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-3.5"
+        >
           {signingOut ? (
             <ActivityIndicator color="#ef4444" />
           ) : (

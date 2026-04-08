@@ -1,7 +1,3 @@
-import { api } from '@/convex/_generated/api';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
-import { useCachedQueryValue } from '@/lib/cached-query';
-import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react-native';
@@ -18,6 +14,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { api } from '@/convex/_generated/api';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
+import { getErrorMessage } from '@/lib/error';
 
 type OrderCategory = Doc<'order_categories'> & {
   usageCount: number;
@@ -99,12 +99,12 @@ export default function OrderCategoriesScreen() {
                 } catch (error: unknown) {
                   Alert.alert(
                     'Unable to delete',
-                    getErrorMessage(error, 'Failed to delete category.')
+                    getErrorMessage(error, 'Failed to delete category.'),
                   );
                 }
               },
             },
-          ]
+          ],
     );
   };
 
@@ -117,7 +117,8 @@ export default function OrderCategoriesScreen() {
             accessibilityLabel="Back"
             accessibilityRole="button"
             hitSlop={10}
-            className="rounded-full p-1">
+            className="rounded-full p-1"
+          >
             <ArrowLeft size={22} color={iconColor} />
           </TouchableOpacity>
           <View>
@@ -129,11 +130,13 @@ export default function OrderCategoriesScreen() {
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+          contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
+        >
           <Text className="text-foreground mb-3 text-lg font-semibold">Add Category</Text>
 
           <View className="border-border bg-card mb-3 rounded-xl border px-3 py-2">
@@ -151,14 +154,16 @@ export default function OrderCategoriesScreen() {
             disabled={saving || !newCategoryName.trim()}
             className={`mb-6 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
               saving || !newCategoryName.trim() ? 'bg-muted' : 'bg-primary'
-            }`}>
+            }`}
+          >
             <Plus size={16} color={isDark ? '#0a0a0a' : '#fafafa'} />
             <Text
               className={`font-semibold ${
                 saving || !newCategoryName.trim()
                   ? 'text-muted-foreground'
                   : 'text-primary-foreground'
-              }`}>
+              }`}
+            >
               {saving ? 'Saving...' : 'Add Category'}
             </Text>
           </TouchableOpacity>
@@ -177,7 +182,8 @@ export default function OrderCategoriesScreen() {
               return (
                 <View
                   key={category._id}
-                  className="border-border bg-card mb-2 rounded-xl border p-4">
+                  className="border-border bg-card mb-2 rounded-xl border p-4"
+                >
                   {isEditing ? (
                     <>
                       <TextInput
@@ -193,7 +199,8 @@ export default function OrderCategoriesScreen() {
                             setEditingId(null);
                             setEditingName('');
                           }}
-                          className="border-border flex-1 rounded-xl border py-3">
+                          className="border-border flex-1 rounded-xl border py-3"
+                        >
                           <Text className="text-foreground text-center font-medium">Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -201,13 +208,15 @@ export default function OrderCategoriesScreen() {
                           disabled={saving || !editingName.trim()}
                           className={`flex-1 rounded-xl py-3 ${
                             saving || !editingName.trim() ? 'bg-muted' : 'bg-primary'
-                          }`}>
+                          }`}
+                        >
                           <Text
                             className={`text-center font-medium ${
                               saving || !editingName.trim()
                                 ? 'text-muted-foreground'
                                 : 'text-primary-foreground'
-                            }`}>
+                            }`}
+                          >
                             {saving ? 'Saving...' : 'Save'}
                           </Text>
                         </TouchableOpacity>
@@ -242,14 +251,16 @@ export default function OrderCategoriesScreen() {
                                 setEditingId(category._id);
                                 setEditingName(category.name);
                               }}
-                              className="border-border rounded-full border p-2">
+                              className="border-border rounded-full border p-2"
+                            >
                               <Pencil size={15} color={iconColor} />
                             </TouchableOpacity>
                           )}
                           {!isProtected && (
                             <TouchableOpacity
                               onPress={() => confirmDelete(category)}
-                              className="border-border rounded-full border p-2">
+                              className="border-border rounded-full border p-2"
+                            >
                               <Trash2 size={15} color="#ef4444" />
                             </TouchableOpacity>
                           )}

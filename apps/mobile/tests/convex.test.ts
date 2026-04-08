@@ -1,17 +1,23 @@
 import { convexTest } from 'convex-test';
 import { exportJWK, generateKeyPair } from 'jose';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-
+import * as generatedApiModule from '../../../packages/backend/convex/_generated/api';
 import { api, internal } from '../../../packages/backend/convex/_generated/api';
 import type { Doc, Id } from '../../../packages/backend/convex/_generated/dataModel';
-import * as analyticsModule from '../../../packages/backend/convex/analytics';
-import * as authConfigModule from '../../../packages/backend/convex/auth.config';
-import * as authModule from '../../../packages/backend/convex/auth';
-import * as authOptionsModule from '../../../packages/backend/convex/authOptions';
-import * as generatedApiModule from '../../../packages/backend/convex/_generated/api';
 import * as generatedServerModule from '../../../packages/backend/convex/_generated/server';
-import * as httpModule from '../../../packages/backend/convex/http';
+import * as analyticsModule from '../../../packages/backend/convex/analytics';
+import * as authModule from '../../../packages/backend/convex/auth';
+import * as authConfigModule from '../../../packages/backend/convex/auth.config';
+import * as authOptionsModule from '../../../packages/backend/convex/authOptions';
+import * as betterAuthGeneratedApiModule from '../../../packages/backend/convex/betterAuth/_generated/api';
+import * as betterAuthGeneratedComponentModule from '../../../packages/backend/convex/betterAuth/_generated/component';
+import * as betterAuthGeneratedDataModelModule from '../../../packages/backend/convex/betterAuth/_generated/dataModel';
+import * as betterAuthGeneratedServerModule from '../../../packages/backend/convex/betterAuth/_generated/server';
+import * as betterAuthAdapterModule from '../../../packages/backend/convex/betterAuth/adapter';
+import * as betterAuthAuthModule from '../../../packages/backend/convex/betterAuth/auth';
+import betterAuthSchema, * as betterAuthSchemaModule from '../../../packages/backend/convex/betterAuth/schema';
 import * as domainModule from '../../../packages/backend/convex/domain';
+import * as httpModule from '../../../packages/backend/convex/http';
 import * as migrationsModule from '../../../packages/backend/convex/migrations';
 import * as monthsModule from '../../../packages/backend/convex/months';
 import * as orderCategoriesModule from '../../../packages/backend/convex/orderCategories';
@@ -19,17 +25,8 @@ import * as ordersModule from '../../../packages/backend/convex/orders';
 import * as productCatalogModule from '../../../packages/backend/convex/productCatalog';
 import * as productsModule from '../../../packages/backend/convex/products';
 import * as scanModule from '../../../packages/backend/convex/scan';
-import * as schemaModule from '../../../packages/backend/convex/schema';
+import schema, * as schemaModule from '../../../packages/backend/convex/schema';
 import * as sharedListsModule from '../../../packages/backend/convex/sharedLists';
-import * as betterAuthAdapterModule from '../../../packages/backend/convex/betterAuth/adapter';
-import * as betterAuthAuthModule from '../../../packages/backend/convex/betterAuth/auth';
-import * as betterAuthGeneratedApiModule from '../../../packages/backend/convex/betterAuth/_generated/api';
-import * as betterAuthGeneratedComponentModule from '../../../packages/backend/convex/betterAuth/_generated/component';
-import * as betterAuthGeneratedDataModelModule from '../../../packages/backend/convex/betterAuth/_generated/dataModel';
-import * as betterAuthGeneratedServerModule from '../../../packages/backend/convex/betterAuth/_generated/server';
-import * as betterAuthSchemaModule from '../../../packages/backend/convex/betterAuth/schema';
-import betterAuthSchema from '../../../packages/backend/convex/betterAuth/schema';
-import schema from '../../../packages/backend/convex/schema';
 
 const modules = {
   '../../../packages/backend/convex/analytics.ts': () => Promise.resolve(analyticsModule),
@@ -111,7 +108,7 @@ function createBackend() {
 async function createAuthenticatedUser(
   t: ReturnType<typeof createBackend>,
   email: string,
-  name: string
+  name: string,
 ) {
   const signUpResponse = await t.fetch('/api/auth/sign-up/email', {
     method: 'POST',
@@ -191,7 +188,7 @@ describe('Convex backend auth + ownership', () => {
         category: 'Dairy',
         unit: 'ltr',
         price: 60,
-      })
+      }),
     );
 
     const initialProductsA = await userA.auth.query(api.products.get, {});
@@ -218,13 +215,13 @@ describe('Convex backend auth + ownership', () => {
       ctx.db
         .query('products')
         .withIndex('by_user_name', (q) => q.eq('userId', undefined).eq('name', 'Milk'))
-        .collect()
+        .collect(),
     );
     const ownedMilkProducts = await t.run(async (ctx) =>
       ctx.db
         .query('products')
         .withIndex('by_user_name', (q) => q.eq('userId', userA.userId).eq('name', 'Milk'))
-        .collect()
+        .collect(),
     );
 
     expect(firstOverride?.userId).toBe(userA.userId);
@@ -265,7 +262,7 @@ describe('Convex backend auth + ownership', () => {
     expect(customCategory?.name).toBe('Travel Crew');
 
     await expect(
-      userA.auth.mutation(orderCategories.add, { name: 'travel    crew' })
+      userA.auth.mutation(orderCategories.add, { name: 'travel    crew' }),
     ).rejects.toThrow('Category already exists.');
 
     const renamedCategory = await userA.auth.mutation(orderCategories.update, {
@@ -275,13 +272,13 @@ describe('Convex backend auth + ownership', () => {
     expect(renamedCategory?.name).toBe('Trip Crew');
 
     const uncategorized = initialCategoriesA.find(
-      (category) => category.systemKey === 'uncategorized'
+      (category) => category.systemKey === 'uncategorized',
     );
     await expect(
       userA.auth.mutation(orderCategories.update, {
         id: uncategorized!._id,
         name: 'Misc',
-      })
+      }),
     ).rejects.toThrow('Uncategorized cannot be renamed.');
 
     const month = await userA.auth.mutation(api.months.add, { year: 2026, month: 5 });
@@ -312,14 +309,14 @@ describe('Convex backend auth + ownership', () => {
 
     const categoriesAfterUse = (await userA.auth.query(orderCategories.get, {})) as OrderCategory[];
     expect(
-      categoriesAfterUse.find((category) => category._id === renamedCategory!._id)?.usageCount
+      categoriesAfterUse.find((category) => category._id === renamedCategory!._id)?.usageCount,
     ).toBe(1);
 
     await expect(
-      userA.auth.mutation(orderCategories.remove, { id: renamedCategory!._id })
+      userA.auth.mutation(orderCategories.remove, { id: renamedCategory!._id }),
     ).rejects.toThrow('Category is in use by existing orders.');
     await expect(
-      userB.auth.mutation(orderCategories.remove, { id: renamedCategory!._id })
+      userB.auth.mutation(orderCategories.remove, { id: renamedCategory!._id }),
     ).rejects.toThrow('Order category not found.');
   });
 
@@ -350,7 +347,7 @@ describe('Convex backend auth + ownership', () => {
         category: 'Essentials',
         unit: 'kg',
         price: 42,
-      })
+      }),
     );
 
     await expect(
@@ -367,7 +364,7 @@ describe('Convex backend auth + ownership', () => {
             price: 55,
           },
         ],
-      })
+      }),
     ).rejects.toThrow('Product not found.');
 
     await userA.auth.mutation(api.orders.add, {
@@ -423,7 +420,7 @@ describe('Convex backend auth + ownership', () => {
       ctx.db
         .query('products')
         .withIndex('by_user_name', (q) => q.eq('userId', userA.userId).eq('name', 'Sugar'))
-        .collect()
+        .collect(),
     );
 
     expect(productsA).toHaveLength(3);
@@ -440,7 +437,7 @@ describe('Convex backend auth + ownership', () => {
     expect(sugarItems[1]?.product_id).toBe(allUserSugarProducts[0]?._id);
     expect(allUserSugarProducts).toHaveLength(1);
     expect((allUserSugarProducts[0] as ProductWithSource | undefined)?.sourceProductId).toBe(
-      sharedSugarId
+      sharedSugarId,
     );
   });
 
@@ -490,14 +487,14 @@ describe('Convex backend auth + ownership', () => {
       userA.auth.mutation(api.orders.updateCategory, {
         id: order!._id,
         category_id: foreignCategory!._id,
-      })
+      }),
     ).rejects.toThrow('Order category not found.');
 
     await expect(
       userB.auth.mutation(api.orders.updateCategory, {
         id: order!._id,
         category_id: foreignCategory!._id,
-      })
+      }),
     ).rejects.toThrow('Order not found.');
   });
 
@@ -544,10 +541,10 @@ describe('Convex backend auth + ownership', () => {
     expect(comparisonA.every((month) => month.total !== 60)).toBe(true);
 
     await expect(userA.auth.query(api.orders.getByMonth, { monthId: monthB!._id })).rejects.toThrow(
-      'Month not found.'
+      'Month not found.',
     );
     await expect(
-      userA.auth.query(api.analytics.getByMonth, { monthId: monthB!._id })
+      userA.auth.query(api.analytics.getByMonth, { monthId: monthB!._id }),
     ).rejects.toThrow('Month not found.');
   });
 
@@ -567,7 +564,7 @@ describe('Convex backend auth + ownership', () => {
     });
 
     await expect(userB.auth.mutation(api.orders.remove, { id: order!._id })).rejects.toThrow(
-      'Order not found.'
+      'Order not found.',
     );
 
     await userA.auth.mutation(api.orders.remove, { id: order!._id });
@@ -639,7 +636,7 @@ describe('Convex backend auth + ownership', () => {
     const user = await createAuthenticatedUser(t, 'scan@example.com', 'Scan User');
 
     await expect(
-      user.auth.action(api.scan.processImage, { image: 'ZmFrZQ==', type: 'receipt' })
+      user.auth.action(api.scan.processImage, { image: 'ZmFrZQ==', type: 'receipt' }),
     ).rejects.toThrow('GEMINI_API_KEY is not configured.');
   });
 
@@ -724,7 +721,7 @@ describe('Convex backend auth + ownership', () => {
     await expect(
       owner.auth.mutation(api.sharedLists.acceptInvite, {
         token: linkInvite!.token,
-      })
+      }),
     ).rejects.toThrow('You already own this list.');
 
     await editor.auth.mutation(api.sharedLists.acceptInvite, {
@@ -734,7 +731,7 @@ describe('Convex backend auth + ownership', () => {
     await expect(
       editor.auth.mutation(api.sharedLists.acceptInvite, {
         token: linkInvite!.token,
-      })
+      }),
     ).rejects.toThrow('You are already added to this list.');
   });
 
@@ -745,7 +742,7 @@ describe('Convex backend auth + ownership', () => {
     const outsider = await createAuthenticatedUser(
       t,
       'single-outsider@example.com',
-      'Single Outsider'
+      'Single Outsider',
     );
 
     const list = await owner.auth.mutation(api.sharedLists.create, {
@@ -764,7 +761,7 @@ describe('Convex backend auth + ownership', () => {
     await expect(
       outsider.auth.mutation(api.sharedLists.acceptInvite, {
         token: emailInvite!.token,
-      })
+      }),
     ).rejects.toThrow('Invite token is expired.');
   });
 
@@ -774,12 +771,12 @@ describe('Convex backend auth + ownership', () => {
     const editorA = await createAuthenticatedUser(
       t,
       'multi-editor-a@example.com',
-      'Multi Editor A'
+      'Multi Editor A',
     );
     const editorB = await createAuthenticatedUser(
       t,
       'multi-editor-b@example.com',
-      'Multi Editor B'
+      'Multi Editor B',
     );
 
     const list = await owner.auth.mutation(api.sharedLists.create, {
@@ -794,7 +791,7 @@ describe('Convex backend auth + ownership', () => {
 
     expect(linkInvite?.is_multi_use).toBe(true);
     expect((linkInvite?.expires_at ?? 0) - startTime).toBeGreaterThanOrEqual(
-      5 * 24 * 60 * 60 * 1000 - 2000
+      5 * 24 * 60 * 60 * 1000 - 2000,
     );
 
     await editorA.auth.mutation(api.sharedLists.acceptInvite, {
@@ -813,7 +810,7 @@ describe('Convex backend auth + ownership', () => {
       owner.auth.mutation(api.sharedLists.createShareLink, {
         list_id: list!._id,
         expires_in_days: 7,
-      })
+      }),
     ).rejects.toThrow('Expected one of literal, literal, literal');
   });
 
@@ -867,7 +864,7 @@ describe('Convex backend auth + ownership', () => {
       owner.auth.mutation(api.sharedLists.convertToOrder, {
         list_id: list!._id,
         category_id: category!._id,
-      })
+      }),
     ).rejects.toThrow('Complete all items before converting the list to an order.');
 
     await editor.auth.mutation(api.sharedLists.toggleItemCompletion, {
@@ -879,7 +876,7 @@ describe('Convex backend auth + ownership', () => {
       editor.auth.mutation(api.sharedLists.convertToOrder, {
         list_id: list!._id,
         category_id: category!._id,
-      })
+      }),
     ).rejects.toThrow('Only the owner can perform this action.');
 
     const converted = await owner.auth.mutation(api.sharedLists.convertToOrder, {
@@ -892,7 +889,7 @@ describe('Convex backend auth + ownership', () => {
       ctx.db
         .query('order_items')
         .withIndex('by_order_id', (q) => q.eq('order_id', converted.orderId))
-        .collect()
+        .collect(),
     );
 
     expect(convertedOrder?.source?.startsWith('shared-list:')).toBe(true);
@@ -904,7 +901,7 @@ describe('Convex backend auth + ownership', () => {
       owner.auth.mutation(api.sharedLists.convertToOrder, {
         list_id: list!._id,
         category_id: category!._id,
-      })
+      }),
     ).rejects.toThrow('List has already been converted to an order.');
   });
 });

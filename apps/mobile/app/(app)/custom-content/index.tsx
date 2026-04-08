@@ -19,7 +19,8 @@ export default function CustomContentScreen() {
             accessibilityLabel="Back"
             accessibilityRole="button"
             hitSlop={10}
-            className="rounded-full p-1">
+            className="rounded-full p-1"
+          >
             <ArrowLeft size={22} color={iconColor} />
           </TouchableOpacity>
           <View>
@@ -33,7 +34,8 @@ export default function CustomContentScreen() {
 
         <TouchableOpacity
           onPress={() => router.push('/custom-content/categories' as Href)}
-          className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
+          className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4"
+        >
           <View className="flex-1 flex-row items-center gap-3">
             <Tags size={18} color={iconColor} />
             <View className="flex-1">

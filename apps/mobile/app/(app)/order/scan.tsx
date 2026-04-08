@@ -1,6 +1,3 @@
-import { api } from '@/convex/_generated/api';
-import { getErrorMessage } from '@/lib/error';
-import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 import { useAction } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,6 +13,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { api } from '@/convex/_generated/api';
+import { getErrorMessage } from '@/lib/error';
+import { getScreenColorTokens } from '@/lib/screen-color-tokens';
 
 export default function ScanScreen() {
   const { monthId, monthTitle } = useLocalSearchParams<{
@@ -158,28 +158,32 @@ export default function ScanScreen() {
                     }
                     className={`flex-row items-center gap-3 rounded-xl border p-4 ${
                       isSelected ? 'border-primary bg-card' : 'border-border bg-card'
-                    }`}>
+                    }`}
+                  >
                     <Icon size={22} color={isSelected ? selectedLabelColor : mutedColor} />
                     <View className="flex-1">
                       <Text
                         style={isSelected ? { color: selectedLabelColor } : undefined}
                         className={`text-sm font-medium ${
                           isSelected ? 'text-foreground' : 'text-muted-foreground'
-                        }`}>
+                        }`}
+                      >
                         {type.label}
                       </Text>
                       <Text
                         style={isSelected ? { color: selectedDescColor } : undefined}
                         className={`text-xs ${
                           isSelected ? 'text-foreground/70' : 'text-muted-foreground'
-                        }`}>
+                        }`}
+                      >
                         {type.desc}
                       </Text>
                     </View>
                     <View
                       className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
                         isSelected ? 'border-primary' : 'border-muted-foreground/30'
-                      }`}>
+                      }`}
+                    >
                       {isSelected && <View className="bg-primary h-2.5 w-2.5 rounded-full" />}
                     </View>
                   </TouchableOpacity>
@@ -191,13 +195,15 @@ export default function ScanScreen() {
             <View className="gap-3">
               <TouchableOpacity
                 onPress={() => pickImage(true)}
-                className="bg-primary flex-row items-center justify-center gap-2 rounded-xl py-4">
+                className="bg-primary flex-row items-center justify-center gap-2 rounded-xl py-4"
+              >
                 <Camera size={20} color={isDark ? '#0a0a0a' : '#fafafa'} />
                 <Text className="text-primary-foreground text-base font-semibold">Take Photo</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => pickImage(false)}
-                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-4">
+                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-4"
+              >
                 <Image size={20} color={iconColor} />
                 <Text className="text-foreground text-base font-semibold">Choose from Gallery</Text>
               </TouchableOpacity>

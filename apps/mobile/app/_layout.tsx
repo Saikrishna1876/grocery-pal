@@ -3,13 +3,7 @@ import '@/global.css';
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/core';
 import { ConvexReactClient } from 'convex/react';
-import {
-  type Href,
-  Stack,
-  useRootNavigationState,
-  useRouter,
-  useSegments,
-} from 'expo-router';
+import { type Href, Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -57,7 +51,8 @@ function LoadingScreen() {
       <Text className="text-foreground text-lg font-semibold">Grocery Pal</Text>
       <Text
         className="text-muted-foreground mt-2 text-center text-sm"
-        style={{ color: isDark ? '#a3a3a3' : '#737373' }}>
+        style={{ color: isDark ? '#a3a3a3' : '#737373' }}
+      >
         Loading your secure workspace...
       </Text>
     </View>

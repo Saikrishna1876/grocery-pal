@@ -22,7 +22,7 @@ export const add = mutation({
     const existing = await ctx.db
       .query('months')
       .withIndex('by_user_year_month', (q) =>
-        q.eq('userId', user._id).eq('year', args.year).eq('month', args.month)
+        q.eq('userId', user._id).eq('year', args.year).eq('month', args.month),
       )
       .unique();
 

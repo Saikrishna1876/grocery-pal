@@ -1,7 +1,3 @@
-import { api } from '@/convex/_generated/api';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
-import { useCachedQueryValue } from '@/lib/cached-query';
-import { getErrorMessage } from '@/lib/error';
 import { useMutation, useQuery } from 'convex/react';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -28,6 +24,10 @@ import {
   View,
 } from 'react-native';
 import { AppText as Text } from '@/components/app-text';
+import { api } from '@/convex/_generated/api';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
+import { useCachedQueryValue } from '@/lib/cached-query';
+import { getErrorMessage } from '@/lib/error';
 
 type ReviewItem = {
   id: string;
@@ -102,7 +102,7 @@ export default function ReviewScreen() {
   const lastUsedCategoryId = lastUsedCategoryState.data;
   const createOrder = useMutation(api.orders.add);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<Id<'order_categories'> | null>(
-    null
+    null,
   );
   const userSelectedCategoryRef = React.useRef(false);
 
@@ -180,7 +180,7 @@ export default function ReviewScreen() {
         }
 
         return updated;
-      })
+      }),
     );
   };
 
@@ -194,7 +194,7 @@ export default function ReviewScreen() {
     }
 
     const matchedProduct = products.find(
-      (product) => product.name.toLowerCase() === newItemName.toLowerCase()
+      (product) => product.name.toLowerCase() === newItemName.toLowerCase(),
     );
     const price = Number(newItemPrice) || matchedProduct?.price || 0;
     const dbPrice = matchedProduct ? Number(matchedProduct.price) : null;
@@ -298,11 +298,13 @@ export default function ReviewScreen() {
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           className="flex-1"
           contentContainerStyle={{ padding: 20, paddingBottom: 200 }}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="border-border bg-card mb-4 rounded-2xl border p-4">
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1">
@@ -313,7 +315,8 @@ export default function ReviewScreen() {
               </View>
               <TouchableOpacity
                 onPress={() => router.push('/custom-content/categories' as Href)}
-                className="border-border flex-row items-center gap-1 rounded-full border px-3 py-2">
+                className="border-border flex-row items-center gap-1 rounded-full border px-3 py-2"
+              >
                 <Settings2 size={14} color={iconColor} />
                 <Text className="text-foreground text-xs font-medium">Manage</Text>
               </TouchableOpacity>
@@ -322,7 +325,8 @@ export default function ReviewScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10, paddingTop: 14, paddingRight: 8 }}>
+              contentContainerStyle={{ gap: 10, paddingTop: 14, paddingRight: 8 }}
+            >
               {categories.map((category) => {
                 const isSelected = selectedCategoryId === category._id;
                 return (
@@ -334,12 +338,14 @@ export default function ReviewScreen() {
                     }}
                     className={`rounded-full border px-4 py-2 ${
                       isSelected ? 'border-primary bg-primary' : 'border-border bg-background'
-                    }`}>
+                    }`}
+                  >
                     <Text
                       numberOfLines={1}
                       className={`text-sm font-medium ${
                         isSelected ? 'text-primary-foreground' : 'text-foreground'
-                      }`}>
+                      }`}
+                    >
                       {category.name}
                     </Text>
                   </TouchableOpacity>
@@ -392,7 +398,8 @@ export default function ReviewScreen() {
                   </View>
                   <TouchableOpacity
                     onPress={() => removeItem(item.id)}
-                    className="rounded-full p-1.5">
+                    className="rounded-full p-1.5"
+                  >
                     <Trash2 size={16} color="#ef4444" />
                   </TouchableOpacity>
                 </View>
@@ -403,7 +410,8 @@ export default function ReviewScreen() {
                       onPress={() =>
                         updateItem(item.id, { quantity: Math.max(0.5, item.quantity - 1) })
                       }
-                      className="px-3 py-2">
+                      className="px-3 py-2"
+                    >
                       <Minus size={14} color={iconColor} />
                     </TouchableOpacity>
                     <TextInput
@@ -419,7 +427,8 @@ export default function ReviewScreen() {
                     />
                     <TouchableOpacity
                       onPress={() => updateItem(item.id, { quantity: item.quantity + 1 })}
-                      className="px-3 py-2">
+                      className="px-3 py-2"
+                    >
                       <Plus size={14} color={iconColor} />
                     </TouchableOpacity>
                   </View>
@@ -464,7 +473,8 @@ export default function ReviewScreen() {
                             : isDark
                               ? 'rgba(34,197,94,0.1)'
                               : 'rgba(34,197,94,0.05)',
-                      }}>
+                      }}
+                    >
                       {item.price_difference > 0 ? (
                         <TrendingUp size={14} color="#ef4444" />
                       ) : (
@@ -476,7 +486,8 @@ export default function ReviewScreen() {
                       </Text>
                       <Text
                         className="text-xs font-medium"
-                        style={{ color: item.price_difference > 0 ? '#ef4444' : '#22c55e' }}>
+                        style={{ color: item.price_difference > 0 ? '#ef4444' : '#22c55e' }}
+                      >
                         {item.price_difference > 0 ? 'Higher' : 'Lower'}
                       </Text>
                     </View>
@@ -508,7 +519,8 @@ export default function ReviewScreen() {
                       <TouchableOpacity
                         key={product._id}
                         onPress={() => selectProductForAdd(product)}
-                        className="border-border border-b px-3 py-3 last:border-b-0">
+                        className="border-border border-b px-3 py-3 last:border-b-0"
+                      >
                         <Text className="text-foreground text-sm font-medium">{product.name}</Text>
                         <Text className="text-muted-foreground text-xs">
                           {product.category} · {product.unit} · ₹{product.price}
@@ -557,12 +569,14 @@ export default function ReviewScreen() {
               <View className="mt-4 flex-row gap-3">
                 <TouchableOpacity
                   onPress={() => setShowAddItem(false)}
-                  className="border-border flex-1 rounded-xl border py-3">
+                  className="border-border flex-1 rounded-xl border py-3"
+                >
                   <Text className="text-foreground text-center font-medium">Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={addManualItem}
-                  className="bg-primary flex-1 rounded-xl py-3">
+                  className="bg-primary flex-1 rounded-xl py-3"
+                >
                   <Text className="text-primary-foreground text-center font-medium">Add Item</Text>
                 </TouchableOpacity>
               </View>
@@ -570,7 +584,8 @@ export default function ReviewScreen() {
           ) : (
             <TouchableOpacity
               onPress={() => setShowAddItem(true)}
-              className="border-border bg-card rounded-xl border border-dashed py-4">
+              className="border-border bg-card rounded-xl border border-dashed py-4"
+            >
               <Text className="text-foreground text-center font-medium">+ Add Manual Item</Text>
             </TouchableOpacity>
           )}
@@ -586,14 +601,16 @@ export default function ReviewScreen() {
             disabled={saving || reviewItems.length === 0}
             className={`flex-row items-center justify-center gap-2 rounded-xl py-4 ${
               saving || reviewItems.length === 0 ? 'bg-muted' : 'bg-primary'
-            }`}>
+            }`}
+          >
             <Check size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
             <Text
               className={`text-base font-semibold ${
                 saving || reviewItems.length === 0
                   ? 'text-muted-foreground'
                   : 'text-primary-foreground'
-              }`}>
+              }`}
+            >
               {saving ? 'Saving...' : 'Confirm Order'}
             </Text>
           </TouchableOpacity>

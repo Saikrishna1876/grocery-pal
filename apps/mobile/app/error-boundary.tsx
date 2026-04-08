@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Platform } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { getErrorMessage, getErrorStack } from '@/lib/error';
 
 interface Props {
@@ -42,7 +42,7 @@ function sendErrorToIframeParent(error: unknown, errorInfo?: React.ErrorInfo) {
     try {
       window.parent.postMessage(
         errorMessage,
-        webTargetOrigins.includes(document.referrer) ? document.referrer : '*'
+        webTargetOrigins.includes(document.referrer) ? document.referrer : '*',
       );
     } catch (postMessageError) {
       console.error('Failed to send error to parent:', postMessageError);
@@ -63,7 +63,7 @@ if (Platform.OS === 'web' && typeof window !== 'undefined') {
       };
       sendErrorToIframeParent(errorDetails);
     },
-    true
+    true,
   );
 
   window.addEventListener(
@@ -72,7 +72,7 @@ if (Platform.OS === 'web' && typeof window !== 'undefined') {
       event.preventDefault();
       sendErrorToIframeParent(event.reason);
     },
-    true
+    true,
   );
 
   const originalConsoleError = console.error;

@@ -2,8 +2,8 @@ import { ConvexError, v } from 'convex/values';
 
 import { components } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
-import { mutation, query } from './_generated/server';
 import type { MutationCtx, QueryCtx } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { ensureDefaultOrderCategories } from './orderCategories';
 
@@ -81,7 +81,7 @@ async function upsertMember(
   listId: Id<'shared_lists'>,
   userId: string,
   addedBy: string,
-  role: MemberRole
+  role: MemberRole,
 ) {
   const existing = await getMembership(ctx, listId, userId);
   if (existing) {
@@ -110,7 +110,7 @@ async function writeActivity(
   actorUserId: string,
   eventType: string,
   metadata?: string,
-  itemId?: Id<'shared_list_items'>
+  itemId?: Id<'shared_list_items'>,
 ) {
   await ctx.db.insert('shared_list_activity_events', {
     list_id: listId,
@@ -134,7 +134,7 @@ async function getOrCreateCurrentMonth(ctx: WriterCtx, userId: string) {
   const existing = await ctx.db
     .query('months')
     .withIndex('by_user_year_month', (q) =>
-      q.eq('userId', userId).eq('year', year).eq('month', month)
+      q.eq('userId', userId).eq('year', year).eq('month', month),
     )
     .unique();
 
@@ -191,7 +191,7 @@ async function resolveUserSummary(ctx: QueryCtx, userId: string) {
     await ctx.runQuery(components.betterAuth.adapter.findOne, {
       model: 'user',
       where: [{ field: '_id', operator: 'eq', value: userId }],
-    })
+    }),
   );
 
   if (byComponentId) {
@@ -207,7 +207,7 @@ async function resolveUserSummary(ctx: QueryCtx, userId: string) {
     await ctx.runQuery(components.betterAuth.adapter.findOne, {
       model: 'user',
       where: [{ field: 'userId', operator: 'eq', value: userId }],
-    })
+    }),
   );
 
   if (byComponentUserId) {
@@ -331,7 +331,7 @@ export const getById = query({
           user_image: memberUser.image,
           added_by_name: addedByUser.name,
         };
-      })
+      }),
     );
 
     const activeItems = items.filter((item) => !item.deleted_at);
@@ -344,7 +344,7 @@ export const getById = query({
           created_by_email: creator.email,
           created_by_image: creator.image,
         };
-      })
+      }),
     );
 
     return {
@@ -602,7 +602,7 @@ export const toggleItemCompletion = mutation({
       user._id,
       args.completed ? 'item_completed' : 'item_reopened',
       item.name,
-      item._id
+      item._id,
     );
 
     return ctx.db.get(item._id);

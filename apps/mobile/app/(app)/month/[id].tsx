@@ -11,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { api } from '@/convex/_generated/api';
 import { AppText as Text } from '@/components/app-text';
+import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
@@ -65,10 +65,10 @@ export default function MonthDetail() {
   const updateOrderCategory = useMutation(api.orders.updateCategory);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [expandedCategoryOrderId, setExpandedCategoryOrderId] = React.useState<Id<'orders'> | null>(
-    null
+    null,
   );
   const [updatingCategoryOrderId, setUpdatingCategoryOrderId] = React.useState<Id<'orders'> | null>(
-    null
+    null,
   );
 
   const orders = ordersState.data ?? [];
@@ -88,7 +88,7 @@ export default function MonthDetail() {
       const sourceMatch = (order.source ?? '').toLowerCase().includes(normalizedSearchQuery);
       const notesMatch = (order.notes ?? '').toLowerCase().includes(normalizedSearchQuery);
       const itemMatch = order.items.some((item) =>
-        item.name.toLowerCase().includes(normalizedSearchQuery)
+        item.name.toLowerCase().includes(normalizedSearchQuery),
       );
 
       return categoryMatch || sourceMatch || notesMatch || itemMatch;
@@ -124,7 +124,7 @@ export default function MonthDetail() {
     } catch (error: unknown) {
       Alert.alert(
         'Unable to change category',
-        getErrorMessage(error, 'Failed to update category.')
+        getErrorMessage(error, 'Failed to update category.'),
       );
     } finally {
       setUpdatingCategoryOrderId(null);
@@ -153,10 +153,11 @@ export default function MonthDetail() {
             onPress={() =>
               monthId &&
               router.push(
-                `/month/analytics?monthId=${encodeURIComponent(id)}&monthTitle=${encodeURIComponent(title ?? '')}` as Href
+                `/month/analytics?monthId=${encodeURIComponent(id)}&monthTitle=${encodeURIComponent(title ?? '')}` as Href,
               )
             }
-            className="border-border max-w-full flex-row items-center gap-1.5 rounded-full border px-3 py-2">
+            className="border-border max-w-full flex-row items-center gap-1.5 rounded-full border px-3 py-2"
+          >
             <BarChart3 size={16} color={iconColor} />
             <Text numberOfLines={1} className="text-foreground text-xs font-medium">
               Analytics
@@ -209,7 +210,8 @@ export default function MonthDetail() {
                 return (
                   <View
                     key={order._id}
-                    className="border-border bg-card mb-2 rounded-xl border p-4">
+                    className="border-border bg-card mb-2 rounded-xl border p-4"
+                  >
                     <View className="flex-row items-start justify-between gap-2">
                       <View className="flex-1">
                         <View className="flex-row flex-wrap items-center gap-2">
@@ -219,7 +221,8 @@ export default function MonthDetail() {
                           <TouchableOpacity
                             disabled={updatingThisOrder || categories.length === 0}
                             onPress={() => toggleOrderCategoryPicker(order._id)}
-                            className="bg-primary/10 rounded-full px-2 py-0.5">
+                            className="bg-primary/10 rounded-full px-2 py-0.5"
+                          >
                             <View className="flex-row items-center gap-1">
                               <Tag size={10} color={iconColor} />
                               <Text numberOfLines={1} className="text-foreground text-xs">
@@ -242,7 +245,8 @@ export default function MonthDetail() {
                       </View>
                       <TouchableOpacity
                         onPress={() => deleteOrder(order._id)}
-                        className="rounded-full p-2">
+                        className="rounded-full p-2"
+                      >
                         <Trash2 size={16} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
@@ -252,7 +256,8 @@ export default function MonthDetail() {
                         <ScrollView
                           horizontal
                           showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
+                          contentContainerStyle={{ gap: 8, paddingRight: 8 }}
+                        >
                           {categories.map((category) => {
                             const isSelected = category._id === order.category_id;
                             return (
@@ -264,12 +269,14 @@ export default function MonthDetail() {
                                   isSelected
                                     ? 'border-primary bg-primary'
                                     : 'border-border bg-background'
-                                }`}>
+                                }`}
+                              >
                                 <Text
                                   numberOfLines={1}
                                   className={`text-xs font-medium ${
                                     isSelected ? 'text-primary-foreground' : 'text-foreground'
-                                  }`}>
+                                  }`}
+                                >
                                   {category.name}
                                 </Text>
                               </TouchableOpacity>
@@ -283,7 +290,8 @@ export default function MonthDetail() {
                         <View key={item._id} className="flex-row items-center justify-between py-1">
                           <Text
                             numberOfLines={2}
-                            className="text-muted-foreground flex-1 pr-2 text-sm">
+                            className="text-muted-foreground flex-1 pr-2 text-sm"
+                          >
                             {item.name} x{item.quantity} {item.unit}
                           </Text>
                           <Text className="text-foreground shrink-0 text-sm">

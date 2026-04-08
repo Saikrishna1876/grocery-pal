@@ -28,7 +28,7 @@ function normalizeMessage(message: string) {
         !line.startsWith('[Request ID:') &&
         line !== 'Server Error' &&
         line !== 'Called by client' &&
-        !line.startsWith('at ')
+        !line.startsWith('at '),
     );
 
   return lines[0] ?? '';

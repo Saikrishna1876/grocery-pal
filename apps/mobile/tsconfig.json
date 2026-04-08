@@ -6,14 +6,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "types": [
-      "node",
-      "vite/client"
-    ],
+    "types": ["node", "vite/client"],
     "paths": {
-      "@/*": [
-        "*"
-      ]
+      "@/*": ["*"]
     }
   },
   "include": [
@@ -28,7 +23,5 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts"
   ],
-  "exclude": [
-    "tests"
-  ]
+  "exclude": ["tests"]
 }

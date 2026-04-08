@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { ConvexHttpClient } from 'convex/browser';
-import type { Id } from '../convex/_generated/dataModel.js';
 import { api } from '../convex/_generated/api.js';
+import type { Id } from '../convex/_generated/dataModel.js';
 
 // Load environment variables
 // bun automatically loads .env, but we might need to be explicit if running with node
@@ -13,7 +13,7 @@ const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL;
 
 if (!supabaseUrl || !supabaseKey || !convexUrl) {
   console.error(
-    'Missing environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or EXPO_PUBLIC_CONVEX_URL'
+    'Missing environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or EXPO_PUBLIC_CONVEX_URL',
   );
   process.exit(1);
 }
@@ -86,7 +86,7 @@ async function migrate() {
 
       if (!newMonthId) {
         console.warn(
-          `Skipping order ${o.id} because month ${oldMonthId} was not found in migration map.`
+          `Skipping order ${o.id} because month ${oldMonthId} was not found in migration map.`,
         );
         continue;
       }
@@ -130,7 +130,7 @@ async function migrate() {
         newProductId = productIdMap[oldProductId];
         if (!newProductId) {
           console.warn(
-            `Item ${i.id} references product ${oldProductId} which was not found. Keeping product_id undefined.`
+            `Item ${i.id} references product ${oldProductId} which was not found. Keeping product_id undefined.`,
           );
         }
       }

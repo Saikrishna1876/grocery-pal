@@ -46,8 +46,8 @@ export async function listCatalogProducts(ctx: ReaderCtx, userId: string) {
   ]);
   const overriddenSourceIds = new Set(
     userProducts.flatMap((product: ProductDoc) =>
-      product.sourceProductId ? [product.sourceProductId] : []
-    )
+      product.sourceProductId ? [product.sourceProductId] : [],
+    ),
   );
 
   return sortProducts([
@@ -59,7 +59,7 @@ export async function listCatalogProducts(ctx: ReaderCtx, userId: string) {
 export async function getAccessibleProduct(
   ctx: ReaderCtx,
   userId: string,
-  productId: Id<'products'>
+  productId: Id<'products'>,
 ) {
   const product = await ctx.db.get(productId);
   if (!product || (product.userId && product.userId !== userId)) {
@@ -72,15 +72,15 @@ export async function getAccessibleProduct(
 export async function getUserOverrideForSource(
   ctx: ReaderCtx,
   userId: string,
-  sourceProductId: Id<'products'>
+  sourceProductId: Id<'products'>,
 ) {
   return getNewestProduct(
     await ctx.db
       .query('products')
       .withIndex('by_user_source_product', (q) =>
-        q.eq('userId', userId).eq('sourceProductId', sourceProductId)
+        q.eq('userId', userId).eq('sourceProductId', sourceProductId),
       )
-      .collect()
+      .collect(),
   );
 }
 
@@ -89,7 +89,7 @@ export async function findLatestUserProductByName(ctx: ReaderCtx, userId: string
     await ctx.db
       .query('products')
       .withIndex('by_user_name', (q) => q.eq('userId', userId).eq('name', name))
-      .collect()
+      .collect(),
   );
 }
 
@@ -98,7 +98,7 @@ export async function findSharedProductByName(ctx: ReaderCtx, name: string) {
     await ctx.db
       .query('products')
       .withIndex('by_user_name', (q) => q.eq('userId', undefined).eq('name', name))
-      .collect()
+      .collect(),
   );
 }
 
@@ -115,7 +115,7 @@ export async function upsertProductOverride(
   ctx: WriterCtx,
   userId: string,
   sourceProduct: ProductDoc,
-  values: ProductValues
+  values: ProductValues,
 ) {
   const existingOverride = await getUserOverrideForSource(ctx, userId, sourceProduct._id);
   const now = new Date().toISOString();

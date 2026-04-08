@@ -127,7 +127,7 @@ async function callGemini(apiKey: string, prompt: string, image: string) {
           },
         ],
       }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -166,7 +166,7 @@ export const processImage = action({
     const responseText = await callGemini(getGeminiKey(), prompt, trimmed);
     const parsed = extractJson(responseText);
     const productsByName = new Map(
-      products.map((product) => [product.name.toLowerCase(), product])
+      products.map((product) => [product.name.toLowerCase(), product]),
     );
     const productsById = new Map(products.map((product) => [product._id, product]));
 

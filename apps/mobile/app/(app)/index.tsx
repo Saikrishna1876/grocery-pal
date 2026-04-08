@@ -16,8 +16,8 @@ import {
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
-import { api } from '@/convex/_generated/api';
 import { AppText as Text } from '@/components/app-text';
+import { api } from '@/convex/_generated/api';
 import { useCachedQueryValue } from '@/lib/cached-query';
 import { MONTH_NAMES } from '@/lib/months';
 
@@ -159,7 +159,8 @@ export default function Dashboard() {
                       <Text
                         numberOfLines={2}
                         style={{ color: trend > 0 ? redColor : greenColor }}
-                        className="text-xs font-medium">
+                        className="text-xs font-medium"
+                      >
                         {trend > 0 ? '+' : ''}
                         {trend.toFixed(0)} vs last month
                       </Text>
@@ -172,13 +173,15 @@ export default function Dashboard() {
             <View className="mb-3 flex-row flex-wrap gap-3">
               <TouchableOpacity
                 onPress={createCurrentMonth}
-                className="bg-primary min-w-[160px] flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3.5">
+                className="bg-primary min-w-[160px] flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3.5"
+              >
                 <Plus size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
                 <Text className="text-primary-foreground text-center font-semibold">New Month</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/custom-content' as Href)}
-                className="border-border bg-card min-w-[160px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5">
+                className="border-border bg-card min-w-[160px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border px-4 py-3.5"
+              >
                 <Tag size={18} color={iconColor} />
                 <Text className="text-foreground text-center font-semibold">Custom Content</Text>
               </TouchableOpacity>
@@ -186,7 +189,8 @@ export default function Dashboard() {
 
             <TouchableOpacity
               onPress={() => router.push('/shared' as Href)}
-              className="border-border bg-card mb-6 flex-row items-center justify-between rounded-xl border px-4 py-3.5">
+              className="border-border bg-card mb-6 flex-row items-center justify-between rounded-xl border px-4 py-3.5"
+            >
               <View className="flex-row items-center gap-2">
                 <Users size={18} color={iconColor} />
                 <Text className="text-foreground font-semibold">Shared Lists</Text>
@@ -215,7 +219,8 @@ export default function Dashboard() {
                       },
                     })
                   }
-                  className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4">
+                  className="border-border bg-card mb-2 flex-row items-center justify-between rounded-xl border p-4"
+                >
                   <View className="flex-1 pr-3">
                     <Text numberOfLines={1} className="text-foreground text-base font-semibold">
                       {MONTH_NAMES[month.month]} {month.year}
@@ -241,7 +246,8 @@ export default function Dashboard() {
         <View className="flex-row flex-wrap gap-3">
           <TouchableOpacity
             onPress={() => router.push('/profile' as Href)}
-            className="border-border bg-card min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5">
+            className="border-border bg-card min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
+          >
             <User size={18} color={iconColor} />
             <Text className="text-foreground text-center font-semibold">Profile</Text>
           </TouchableOpacity>
@@ -250,12 +256,14 @@ export default function Dashboard() {
             onPress={openAddOptions}
             className={`min-w-[140px] flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3.5 ${
               currentMonth ? 'bg-primary' : 'bg-secondary'
-            }`}>
+            }`}
+          >
             <Plus size={18} color={addButtonIconColor} />
             <Text
               className={`font-semibold ${
                 currentMonth ? 'text-primary-foreground' : 'text-muted-foreground'
-              }`}>
+              }`}
+            >
               Add
             </Text>
           </TouchableOpacity>
@@ -271,7 +279,8 @@ export default function Dashboard() {
         visible={showAddOptions}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowAddOptions(false)}>
+        onRequestClose={() => setShowAddOptions(false)}
+      >
         <View className="flex-1 justify-end">
           <TouchableOpacity
             activeOpacity={1}
@@ -285,21 +294,24 @@ export default function Dashboard() {
             <View className="mt-5 gap-3">
               <TouchableOpacity
                 onPress={handleAddScan}
-                className="bg-primary flex-row items-center justify-center gap-2 rounded-xl py-4">
+                className="bg-primary flex-row items-center justify-center gap-2 rounded-xl py-4"
+              >
                 <Camera size={20} color={isDark ? '#0a0a0a' : '#fafafa'} />
                 <Text className="text-primary-foreground text-base font-semibold">Scan Items</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleAddManual}
-                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-4">
+                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-4"
+              >
                 <Plus size={20} color={iconColor} />
                 <Text className="text-foreground text-base font-semibold">Add Manually</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => setShowAddOptions(false)}
-                className="bg-secondary rounded-xl py-3">
+                className="bg-secondary rounded-xl py-3"
+              >
                 <Text className="text-foreground text-center font-medium">Cancel</Text>
               </TouchableOpacity>
             </View>

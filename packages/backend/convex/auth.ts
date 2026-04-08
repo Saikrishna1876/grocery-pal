@@ -89,10 +89,10 @@ export const cleanupLegacyOwnerlessData = internalMutation({
   args: {},
   handler: async (ctx) => {
     const ownerlessMonths = (await ctx.db.query('months').collect()).filter(
-      (month) => !month.userId
+      (month) => !month.userId,
     );
     const ownerlessOrders = (await ctx.db.query('orders').collect()).filter(
-      (order) => !order.userId
+      (order) => !order.userId,
     );
     let deletedOrderItems = 0;
     for (const order of ownerlessOrders) {

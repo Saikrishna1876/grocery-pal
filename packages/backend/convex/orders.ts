@@ -1,8 +1,8 @@
 import { ConvexError, v } from 'convex/values';
 
 import type { Id } from './_generated/dataModel';
-import { mutation, query } from './_generated/server';
 import type { MutationCtx, QueryCtx } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { requireCurrentUser } from './auth';
 import { listOrdersWithItemsForMonth } from './domain';
 import { ensureDefaultOrderCategories, getUncategorizedCategory } from './orderCategories';
@@ -41,7 +41,7 @@ async function upsertUserProduct(
     name: string;
     unit: string;
     price: number;
-  }
+  },
 ) {
   const now = new Date().toISOString();
   const name = item.name.trim();
@@ -92,7 +92,7 @@ async function resolveProductForOrder(
     name: string;
     unit: string;
     price: number;
-  }
+  },
 ) {
   if (!item.product_id) {
     return upsertUserProduct(ctx, userId, item);

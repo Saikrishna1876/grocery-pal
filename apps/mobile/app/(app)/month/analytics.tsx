@@ -50,7 +50,7 @@ export default function MonthAnalytics() {
   const parsedMonthId = monthId as Id<'months'> | undefined;
   const analyticsLiveResult = useQuery(
     api.analytics.getByMonth,
-    parsedMonthId ? { monthId: parsedMonthId } : 'skip'
+    parsedMonthId ? { monthId: parsedMonthId } : 'skip',
   );
   const comparisonLiveResult = useQuery(api.analytics.getComparison);
   const analyticsState = useCachedQueryValue<Partial<AnalyticsData>>({
@@ -288,7 +288,8 @@ export default function MonthAnalytics() {
                 {analytics.top_items.slice(0, 5).map((item, index) => (
                   <View
                     key={`${item.name}-${index}`}
-                    className="border-border/50 flex-row items-center justify-between border-b py-2 last:border-b-0">
+                    className="border-border/50 flex-row items-center justify-between border-b py-2 last:border-b-0"
+                  >
                     <Text className="text-foreground text-sm">
                       {index + 1}. {item.name}
                     </Text>
