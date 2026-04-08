@@ -23,7 +23,9 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   Share,
   TextInput,
@@ -547,101 +549,109 @@ export default function SharedListDetailScreen() {
               resetItemForm();
             }}
           />
-          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
-            <Text className="text-foreground text-base font-semibold">
-              {showEditModal ? 'Update Item' : 'Add Item'}
-            </Text>
-            {!showEditModal && (
-              <>
-                <View className="border-border bg-card mt-4 rounded-xl border px-3 py-2.5">
-                  <View className="flex-row items-center gap-2">
-                    <Search size={16} color={mutedColor} />
-                    <TextInput
-                      value={productSearchQuery}
-                      onChangeText={setProductSearchQuery}
-                      placeholder="Search existing items"
-                      placeholderTextColor={mutedColor}
-                      className="text-foreground flex-1 text-sm"
-                    />
-                  </View>
-                </View>
-
-                {filteredProducts.length > 0 && (
-                  <View className="border-border bg-card mt-2 max-h-44 rounded-xl border">
-                    <ScrollView nestedScrollEnabled>
-                      {filteredProducts.slice(0, 8).map((product) => (
-                        <TouchableOpacity
-                          key={product._id}
-                          onPress={() => selectProductForAdd(product)}
-                          className="border-border border-b px-3 py-3 last:border-b-0">
-                          <Text className="text-foreground text-sm font-medium">
-                            {product.name}
-                          </Text>
-                          <Text className="text-muted-foreground text-xs">
-                            {product.category} · {product.unit} · ₹{product.price}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </>
-            )}
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Name"
-              placeholderTextColor={mutedColor}
-              className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
-            />
-            <View className="mt-3 flex-row gap-2">
-              <TextInput
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="decimal-pad"
-                placeholder="Qty"
-                placeholderTextColor={mutedColor}
-                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
-              />
-              <TextInput
-                value={unit}
-                onChangeText={setUnit}
-                placeholder="Unit"
-                placeholderTextColor={mutedColor}
-                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
-              />
-              <TextInput
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="decimal-pad"
-                placeholder="Price"
-                placeholderTextColor={mutedColor}
-                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
-              />
-            </View>
-            <View className="mt-4 flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => {
-                  setShowAddModal(false);
-                  setShowEditModal(false);
-                  resetItemForm();
-                }}
-                className="bg-secondary flex-1 rounded-xl py-3">
-                <Text className="text-foreground text-center font-medium">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                disabled={saving}
-                onPress={showEditModal ? submitEdit : submitAdd}
-                className={`flex-1 rounded-xl py-3 ${saving ? 'bg-secondary' : 'bg-primary'}`}>
-                <Text
-                  className={`text-center font-semibold ${
-                    saving ? 'text-muted-foreground' : 'text-primary-foreground'
-                  }`}>
-                  {saving ? 'Saving...' : 'Save'}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            className="w-full">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingTop: 8 }}>
+              <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+                <Text className="text-foreground text-base font-semibold">
+                  {showEditModal ? 'Update Item' : 'Add Item'}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                {!showEditModal && (
+                  <>
+                    <View className="border-border bg-card mt-4 rounded-xl border px-3 py-2.5">
+                      <View className="flex-row items-center gap-2">
+                        <Search size={16} color={mutedColor} />
+                        <TextInput
+                          value={productSearchQuery}
+                          onChangeText={setProductSearchQuery}
+                          placeholder="Search existing items"
+                          placeholderTextColor={mutedColor}
+                          className="text-foreground flex-1 text-sm"
+                        />
+                      </View>
+                    </View>
+
+                    {filteredProducts.length > 0 && (
+                      <View className="border-border bg-card mt-2 max-h-44 rounded-xl border">
+                        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                          {filteredProducts.slice(0, 8).map((product) => (
+                            <TouchableOpacity
+                              key={product._id}
+                              onPress={() => selectProductForAdd(product)}
+                              className="border-border border-b px-3 py-3 last:border-b-0">
+                              <Text className="text-foreground text-sm font-medium">
+                                {product.name}
+                              </Text>
+                              <Text className="text-muted-foreground text-xs">
+                                {product.category} · {product.unit} · ₹{product.price}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </>
+                )}
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Name"
+                  placeholderTextColor={mutedColor}
+                  className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
+                />
+                <View className="mt-3 flex-row gap-2">
+                  <TextInput
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    keyboardType="decimal-pad"
+                    placeholder="Qty"
+                    placeholderTextColor={mutedColor}
+                    className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+                  />
+                  <TextInput
+                    value={unit}
+                    onChangeText={setUnit}
+                    placeholder="Unit"
+                    placeholderTextColor={mutedColor}
+                    className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+                  />
+                  <TextInput
+                    value={price}
+                    onChangeText={setPrice}
+                    keyboardType="decimal-pad"
+                    placeholder="Price"
+                    placeholderTextColor={mutedColor}
+                    className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+                  />
+                </View>
+                <View className="mt-4 flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowAddModal(false);
+                      setShowEditModal(false);
+                      resetItemForm();
+                    }}
+                    className="bg-secondary flex-1 rounded-xl py-3">
+                    <Text className="text-foreground text-center font-medium">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={saving}
+                    onPress={showEditModal ? submitEdit : submitAdd}
+                    className={`flex-1 rounded-xl py-3 ${saving ? 'bg-secondary' : 'bg-primary'}`}>
+                    <Text
+                      className={`text-center font-semibold ${
+                        saving ? 'text-muted-foreground' : 'text-primary-foreground'
+                      }`}>
+                      {saving ? 'Saving...' : 'Save'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -661,51 +671,61 @@ export default function SharedListDetailScreen() {
               setCompletingItemId(null);
             }}
           />
-          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
-            <Text className="text-foreground text-base font-semibold">Tick Item and Set Price</Text>
-            <Text className="text-muted-foreground mt-1 text-xs">
-              Quantity and price are prefilled from the item. Edit either one if needed.
-            </Text>
-            <View className="mt-4 flex-row gap-2">
-              <TextInput
-                value={completionQuantity}
-                onChangeText={setCompletionQuantity}
-                keyboardType="decimal-pad"
-                placeholder="Quantity"
-                placeholderTextColor={mutedColor}
-                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
-              />
-              <TextInput
-                value={completionPrice}
-                onChangeText={setCompletionPrice}
-                keyboardType="decimal-pad"
-                placeholder="Price"
-                placeholderTextColor={mutedColor}
-                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
-              />
-            </View>
-            <View className="mt-4 flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => {
-                  setShowCompleteModal(false);
-                  setCompletingItemId(null);
-                }}
-                className="bg-secondary flex-1 rounded-xl py-3">
-                <Text className="text-foreground text-center font-medium">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                disabled={completing}
-                onPress={submitCompletionWithPrice}
-                className={`flex-1 rounded-xl py-3 ${completing ? 'bg-secondary' : 'bg-primary'}`}>
-                <Text
-                  className={`text-center font-semibold ${
-                    completing ? 'text-muted-foreground' : 'text-primary-foreground'
-                  }`}>
-                  {completing ? 'Saving...' : 'Complete'}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            className="w-full">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingTop: 8 }}>
+              <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+                <Text className="text-foreground text-base font-semibold">
+                  Tick Item and Set Price
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <Text className="text-muted-foreground mt-1 text-xs">
+                  Quantity and price are prefilled from the item. Edit either one if needed.
+                </Text>
+                <View className="mt-4 flex-row gap-2">
+                  <TextInput
+                    value={completionQuantity}
+                    onChangeText={setCompletionQuantity}
+                    keyboardType="decimal-pad"
+                    placeholder="Quantity"
+                    placeholderTextColor={mutedColor}
+                    className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+                  />
+                  <TextInput
+                    value={completionPrice}
+                    onChangeText={setCompletionPrice}
+                    keyboardType="decimal-pad"
+                    placeholder="Price"
+                    placeholderTextColor={mutedColor}
+                    className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+                  />
+                </View>
+                <View className="mt-4 flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowCompleteModal(false);
+                      setCompletingItemId(null);
+                    }}
+                    className="bg-secondary flex-1 rounded-xl py-3">
+                    <Text className="text-foreground text-center font-medium">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={completing}
+                    onPress={submitCompletionWithPrice}
+                    className={`flex-1 rounded-xl py-3 ${completing ? 'bg-secondary' : 'bg-primary'}`}>
+                    <Text
+                      className={`text-center font-semibold ${
+                        completing ? 'text-muted-foreground' : 'text-primary-foreground'
+                      }`}>
+                      {completing ? 'Saving...' : 'Complete'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -778,57 +798,67 @@ export default function SharedListDetailScreen() {
             className="flex-1 bg-black/40"
             onPress={() => setShowShareModal(false)}
           />
-          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
-            <Text className="text-foreground text-base font-semibold">Share List</Text>
-            <TextInput
-              value={inviteEmail}
-              onChangeText={setInviteEmail}
-              placeholder="Invite by email"
-              placeholderTextColor={mutedColor}
-              autoCapitalize="none"
-              className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
-            />
-            <Text className="text-muted-foreground mt-4 text-xs">Share token expiry</Text>
-            <View className="mt-2 flex-row gap-2">
-              {SHARE_TOKEN_EXPIRY_OPTIONS.map((days) => {
-                const selected = shareTokenDays === days;
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            className="w-full">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingTop: 8 }}>
+              <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+                <Text className="text-foreground text-base font-semibold">Share List</Text>
+                <TextInput
+                  value={inviteEmail}
+                  onChangeText={setInviteEmail}
+                  placeholder="Invite by email"
+                  placeholderTextColor={mutedColor}
+                  autoCapitalize="none"
+                  className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
+                />
+                <Text className="text-muted-foreground mt-4 text-xs">Share token expiry</Text>
+                <View className="mt-2 flex-row gap-2">
+                  {SHARE_TOKEN_EXPIRY_OPTIONS.map((days) => {
+                    const selected = shareTokenDays === days;
 
-                return (
+                    return (
+                      <TouchableOpacity
+                        key={days}
+                        onPress={() => setShareTokenDays(days)}
+                        activeOpacity={0.9}
+                        style={
+                          selected
+                            ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
+                            : undefined
+                        }
+                        className={`rounded-full border px-4 py-2 ${
+                          selected ? 'border-primary bg-card' : 'border-border bg-card'
+                        }`}>
+                        <Text
+                          style={selected ? { color: selectedLabelColor } : undefined}
+                          className="text-foreground text-xs font-semibold">
+                          {days} days
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <View className="mt-4 gap-2">
                   <TouchableOpacity
-                    key={days}
-                    onPress={() => setShareTokenDays(days)}
-                    activeOpacity={0.9}
-                    style={
-                      selected
-                        ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
-                        : undefined
-                    }
-                    className={`rounded-full border px-4 py-2 ${
-                      selected ? 'border-primary bg-card' : 'border-border bg-card'
-                    }`}>
-                    <Text
-                      style={selected ? { color: selectedLabelColor } : undefined}
-                      className="text-foreground text-xs font-semibold">
-                      {days} days
+                    onPress={onShareWithEmail}
+                    className="bg-primary rounded-xl py-3">
+                    <Text className="text-primary-foreground text-center font-semibold">
+                      Invite by Email
                     </Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
-            <View className="mt-4 gap-2">
-              <TouchableOpacity onPress={onShareWithEmail} className="bg-primary rounded-xl py-3">
-                <Text className="text-primary-foreground text-center font-semibold">
-                  Invite by Email
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={onCreateShareLink}
-                className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-3">
-                <Share2 size={14} color={iconColor} />
-                <Text className="text-foreground font-semibold">Create Share Token</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                  <TouchableOpacity
+                    onPress={onCreateShareLink}
+                    className="border-border bg-card flex-row items-center justify-center gap-2 rounded-xl border py-3">
+                    <Share2 size={14} color={iconColor} />
+                    <Text className="text-foreground font-semibold">Create Share Token</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

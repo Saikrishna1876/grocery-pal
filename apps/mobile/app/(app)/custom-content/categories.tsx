@@ -130,7 +130,10 @@ export default function OrderCategoriesScreen() {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+        <ScrollView
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
           <Text className="text-foreground mb-3 text-lg font-semibold">Add Category</Text>
 
           <View className="border-border bg-card mb-3 rounded-xl border px-3 py-2">

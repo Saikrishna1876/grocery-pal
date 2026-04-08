@@ -10,7 +10,9 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   Share,
   Text,
@@ -225,41 +227,49 @@ export default function SharedListsHubScreen() {
             className="flex-1 bg-black/40"
             onPress={() => setShowCreateModal(false)}
           />
-          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
-            <Text className="text-foreground text-base font-semibold">Create Shared List</Text>
-            <TextInput
-              value={newName}
-              onChangeText={setNewName}
-              placeholder="List name"
-              placeholderTextColor={mutedColor}
-              className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
-            />
-            <TextInput
-              value={newNotes}
-              onChangeText={setNewNotes}
-              placeholder="Notes (optional)"
-              placeholderTextColor={mutedColor}
-              className="border-border bg-card text-foreground mt-3 rounded-xl border px-3 py-3"
-            />
-            <View className="mt-4 flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => setShowCreateModal(false)}
-                className="bg-secondary flex-1 rounded-xl py-3">
-                <Text className="text-foreground text-center font-medium">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                disabled={creating}
-                onPress={onCreate}
-                className={`flex-1 rounded-xl py-3 ${creating ? 'bg-secondary' : 'bg-primary'}`}>
-                <Text
-                  className={`text-center font-semibold ${
-                    creating ? 'text-muted-foreground' : 'text-primary-foreground'
-                  }`}>
-                  {creating ? 'Creating...' : 'Create'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            className="w-full">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingTop: 8 }}>
+              <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+                <Text className="text-foreground text-base font-semibold">Create Shared List</Text>
+                <TextInput
+                  value={newName}
+                  onChangeText={setNewName}
+                  placeholder="List name"
+                  placeholderTextColor={mutedColor}
+                  className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
+                />
+                <TextInput
+                  value={newNotes}
+                  onChangeText={setNewNotes}
+                  placeholder="Notes (optional)"
+                  placeholderTextColor={mutedColor}
+                  className="border-border bg-card text-foreground mt-3 rounded-xl border px-3 py-3"
+                />
+                <View className="mt-4 flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => setShowCreateModal(false)}
+                    className="bg-secondary flex-1 rounded-xl py-3">
+                    <Text className="text-foreground text-center font-medium">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={creating}
+                    onPress={onCreate}
+                    className={`flex-1 rounded-xl py-3 ${creating ? 'bg-secondary' : 'bg-primary'}`}>
+                    <Text
+                      className={`text-center font-semibold ${
+                        creating ? 'text-muted-foreground' : 'text-primary-foreground'
+                      }`}>
+                      {creating ? 'Creating...' : 'Create'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -273,38 +283,48 @@ export default function SharedListsHubScreen() {
             className="flex-1 bg-black/40"
             onPress={() => setShowJoinModal(false)}
           />
-          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
-            <Text className="text-foreground text-base font-semibold">Join with Invite Token</Text>
-            <Text className="text-muted-foreground mt-1 text-xs">
-              Ask the owner for the invite token from their share link.
-            </Text>
-            <TextInput
-              value={inviteToken}
-              onChangeText={setInviteToken}
-              placeholder="Paste invite token"
-              placeholderTextColor={mutedColor}
-              className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
-              autoCapitalize="none"
-            />
-            <View className="mt-4 flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => setShowJoinModal(false)}
-                className="bg-secondary flex-1 rounded-xl py-3">
-                <Text className="text-foreground text-center font-medium">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                disabled={joining}
-                onPress={onJoinWithToken}
-                className={`flex-1 rounded-xl py-3 ${joining ? 'bg-secondary' : 'bg-primary'}`}>
-                <Text
-                  className={`text-center font-semibold ${
-                    joining ? 'text-muted-foreground' : 'text-primary-foreground'
-                  }`}>
-                  {joining ? 'Joining...' : 'Join'}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            className="w-full">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingTop: 8 }}>
+              <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+                <Text className="text-foreground text-base font-semibold">
+                  Join with Invite Token
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <Text className="text-muted-foreground mt-1 text-xs">
+                  Ask the owner for the invite token from their share link.
+                </Text>
+                <TextInput
+                  value={inviteToken}
+                  onChangeText={setInviteToken}
+                  placeholder="Paste invite token"
+                  placeholderTextColor={mutedColor}
+                  className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
+                  autoCapitalize="none"
+                />
+                <View className="mt-4 flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => setShowJoinModal(false)}
+                    className="bg-secondary flex-1 rounded-xl py-3">
+                    <Text className="text-foreground text-center font-medium">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={joining}
+                    onPress={onJoinWithToken}
+                    className={`flex-1 rounded-xl py-3 ${joining ? 'bg-secondary' : 'bg-primary'}`}>
+                    <Text
+                      className={`text-center font-semibold ${
+                        joining ? 'text-muted-foreground' : 'text-primary-foreground'
+                      }`}>
+                      {joining ? 'Joining...' : 'Join'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>

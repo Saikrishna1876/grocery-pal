@@ -85,19 +85,21 @@ export default function SignInScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="bg-background flex-1">
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
-          <Text className="text-2xl font-bold text-foreground">Grocery Pal</Text>
-          <Text className="mt-2 text-sm text-muted-foreground">
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={{ padding: 20, paddingTop: 96, paddingBottom: 260 }}>
+          <Text className="text-foreground text-2xl font-bold">Grocery Pal</Text>
+          <Text className="text-muted-foreground mt-2 text-sm">
             Sign in to access your private months, orders, analytics, and product catalog.
           </Text>
 
-          <View className="mt-6 flex-row rounded-2xl bg-secondary p-1">
+          <View className="bg-secondary mt-6 flex-row rounded-2xl p-1">
             <TouchableOpacity
               onPress={() => {
                 setMode('sign-in');
@@ -132,11 +134,11 @@ export default function SignInScreen() {
 
           <View className="mt-6 gap-4">
             {mode === 'sign-up' && (
-              <View className="rounded-2xl border border-border bg-background px-4 py-3">
+              <View className="border-border bg-background rounded-2xl border px-4 py-3">
                 <View className="flex-row items-center gap-2">
                   <User size={18} color={iconColor} />
                   <TextInput
-                    className="flex-1 text-base text-foreground"
+                    className="text-foreground flex-1 text-base"
                     value={name}
                     onChangeText={setName}
                     autoCapitalize="words"
@@ -149,11 +151,11 @@ export default function SignInScreen() {
               </View>
             )}
 
-            <View className="rounded-2xl border border-border bg-background px-4 py-3">
+            <View className="border-border bg-background rounded-2xl border px-4 py-3">
               <View className="flex-row items-center gap-2">
                 <Mail size={18} color={iconColor} />
                 <TextInput
-                  className="flex-1 text-base text-foreground"
+                  className="text-foreground flex-1 text-base"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
@@ -166,11 +168,11 @@ export default function SignInScreen() {
               </View>
             </View>
 
-            <View className="rounded-2xl border border-border bg-background px-4 py-3">
+            <View className="border-border bg-background rounded-2xl border px-4 py-3">
               <View className="flex-row items-center gap-2">
                 <Lock size={18} color={iconColor} />
                 <TextInput
-                  className="flex-1 text-base text-foreground"
+                  className="text-foreground flex-1 text-base"
                   value={password}
                   onChangeText={setPassword}
                   autoCapitalize="none"
@@ -193,12 +195,12 @@ export default function SignInScreen() {
           <TouchableOpacity
             disabled={submitting}
             onPress={submit}
-            className="mt-6 flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-4">
+            className="bg-primary mt-6 flex-row items-center justify-center gap-2 rounded-2xl py-4">
             {submitting ? (
               <ActivityIndicator color={isDark ? '#0a0a0a' : '#fafafa'} />
             ) : (
               <>
-                <Text className="text-base font-semibold text-primary-foreground">
+                <Text className="text-primary-foreground text-base font-semibold">
                   {mode === 'sign-in' ? 'Continue' : 'Create Account'}
                 </Text>
                 <ArrowRight size={18} color={isDark ? '#0a0a0a' : '#fafafa'} />
@@ -206,7 +208,7 @@ export default function SignInScreen() {
             )}
           </TouchableOpacity>
 
-          <Text className="mt-4 text-center text-xs text-muted-foreground">
+          <Text className="text-muted-foreground mt-4 text-center text-xs">
             {mode === 'sign-in'
               ? 'Email/password only for now. Password reset is not included in this phase.'
               : 'New accounts are signed in immediately after sign-up.'}
