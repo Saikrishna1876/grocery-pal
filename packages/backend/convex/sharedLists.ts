@@ -1,5 +1,6 @@
 import { ConvexError, v } from 'convex/values';
 
+import { components } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import type { MutationCtx, QueryCtx } from './_generated/server';
@@ -155,6 +156,101 @@ async function getOrCreateCurrentMonth(ctx: WriterCtx, userId: string) {
   return created;
 }
 
+type UserSummary = {
+  name: string;
+  email?: string;
+  image?: string;
+};
+
+type BetterAuthUserRecord = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
+function extractBetterAuthUserRecord(value: unknown): BetterAuthUserRecord | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const name = typeof record.name === 'string' ? record.name : null;
+  const email = typeof record.email === 'string' ? record.email : null;
+  const image = typeof record.image === 'string' ? record.image : null;
+
+  return { name, email, image };
+}
+
+async function resolveUserSummary(ctx: QueryCtx, userId: string) {
+  const deriveFallbackName = (email?: string) => {
+    const emailPrefix = typeof email === 'string' ? email.split('@')[0] : undefined;
+    return emailPrefix || 'Unknown user';
+  };
+
+  const byComponentId = extractBetterAuthUserRecord(
+    await ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: 'user',
+      where: [{ field: '_id', operator: 'eq', value: userId }],
+    })
+  );
+
+  if (byComponentId) {
+    const fallbackName = deriveFallbackName(byComponentId.email ?? undefined);
+    return {
+      name: byComponentId.name || fallbackName,
+      email: byComponentId.email || undefined,
+      image: byComponentId.image || undefined,
+    } satisfies UserSummary;
+  }
+
+  const byComponentUserId = extractBetterAuthUserRecord(
+    await ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: 'user',
+      where: [{ field: 'userId', operator: 'eq', value: userId }],
+    })
+  );
+
+  if (byComponentUserId) {
+    const fallbackName = deriveFallbackName(byComponentUserId.email ?? undefined);
+    return {
+      name: byComponentUserId.name || fallbackName,
+      email: byComponentUserId.email || undefined,
+      image: byComponentUserId.image || undefined,
+    } satisfies UserSummary;
+  }
+
+  const normalizedUserId = ctx.db.normalizeId('user', userId);
+  if (normalizedUserId) {
+    const byId = await ctx.db.get(normalizedUserId);
+    if (byId) {
+      const fallbackName = deriveFallbackName(byId.email);
+      return {
+        name: byId.name || fallbackName,
+        email: byId.email || undefined,
+        image: byId.image || undefined,
+      } satisfies UserSummary;
+    }
+  }
+
+  const byUserId = await ctx.db
+    .query('user')
+    .withIndex('userId', (q) => q.eq('userId', userId))
+    .unique();
+
+  if (!byUserId) {
+    return {
+      name: 'Unknown user',
+    } satisfies UserSummary;
+  }
+
+  const fallbackName = deriveFallbackName(byUserId.email);
+  return {
+    name: byUserId.name || fallbackName,
+    email: byUserId.email || undefined,
+    image: byUserId.image || undefined,
+  } satisfies UserSummary;
+}
+
 export const get = query({
   args: {},
   handler: async (ctx) => {
@@ -211,13 +307,51 @@ export const getById = query({
       .withIndex('by_list_created_at', (q) => q.eq('list_id', list._id))
       .collect();
 
+    const userSummaryCache = new Map<string, UserSummary>();
+    const getUserSummary = async (userId: string) => {
+      const cached = userSummaryCache.get(userId);
+      if (cached) {
+        return cached;
+      }
+
+      const resolved = await resolveUserSummary(ctx, userId);
+      userSummaryCache.set(userId, resolved);
+      return resolved;
+    };
+
+    const enrichedMembers = await Promise.all(
+      members.map(async (member) => {
+        const memberUser = await getUserSummary(member.user_id);
+        const addedByUser = await getUserSummary(member.added_by);
+
+        return {
+          ...member,
+          user_name: memberUser.name,
+          user_email: memberUser.email,
+          user_image: memberUser.image,
+          added_by_name: addedByUser.name,
+        };
+      })
+    );
+
     const activeItems = items.filter((item) => !item.deleted_at);
+    const enrichedItems = await Promise.all(
+      activeItems.map(async (item) => {
+        const creator = await getUserSummary(item.created_by);
+        return {
+          ...item,
+          created_by_name: creator.name,
+          created_by_email: creator.email,
+          created_by_image: creator.image,
+        };
+      })
+    );
 
     return {
       list,
       membership,
-      members,
-      items: activeItems.sort((a, b) => a.created_at - b.created_at),
+      members: enrichedMembers,
+      items: enrichedItems.sort((a, b) => a.created_at - b.created_at),
       canConvertToOrder:
         membership.role === 'owner' &&
         !list.converted_order_id &&
@@ -417,6 +551,7 @@ export const toggleItemCompletion = mutation({
     id: v.id('shared_list_items'),
     completed: v.boolean(),
     price: v.optional(v.number()),
+    quantity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -432,12 +567,17 @@ export const toggleItemCompletion = mutation({
       throw new ConvexError('Item price cannot be negative.');
     }
 
+    if (args.quantity !== undefined && args.quantity <= 0) {
+      throw new ConvexError('Item quantity must be greater than zero.');
+    }
+
     const patch: {
       completed: boolean;
       completed_at?: number;
       updated_by: string;
       updated_at: number;
       price?: number;
+      quantity?: number;
     } = {
       completed: args.completed,
       completed_at: args.completed ? Date.now() : undefined,
@@ -447,6 +587,10 @@ export const toggleItemCompletion = mutation({
 
     if (args.price !== undefined) {
       patch.price = args.price;
+    }
+
+    if (args.quantity !== undefined) {
+      patch.quantity = args.quantity;
     }
 
     await ctx.db.patch(item._id, patch);

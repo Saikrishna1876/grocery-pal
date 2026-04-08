@@ -1,5 +1,5 @@
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { useCachedQueryValue } from '@/lib/cached-query';
 import { getErrorMessage } from '@/lib/error';
 import { getScreenColorTokens } from '@/lib/screen-color-tokens';
@@ -11,9 +11,11 @@ import {
   CheckCircle2,
   Copy,
   Plus,
+  Search,
   Share2,
   Trash2,
   Undo2,
+  Users,
   UserPlus,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -41,6 +43,16 @@ type SharedListDetail = {
   membership: {
     role: 'owner' | 'editor';
   };
+  members: Array<{
+    _id: Id<'shared_list_members'>;
+    user_id: string;
+    role: 'owner' | 'editor';
+    created_at: number;
+    user_name?: string;
+    user_email?: string;
+    user_image?: string;
+    added_by_name?: string;
+  }>;
   items: Array<{
     _id: Id<'shared_list_items'>;
     name: string;
@@ -48,6 +60,9 @@ type SharedListDetail = {
     unit: string;
     price: number;
     completed: boolean;
+    created_at: number;
+    created_by_name?: string;
+    created_by_email?: string;
   }>;
   canConvertToOrder: boolean;
 };
@@ -69,6 +84,7 @@ export default function SharedListDetailScreen() {
 
   const detailLiveResult = useQuery(api.sharedLists.getById, listId ? { id: listId } : 'skip');
   const categoriesLiveResult = useQuery(api.orderCategories.get);
+  const productsLiveResult = useQuery(api.products.get);
   const detailState = useCachedQueryValue<SharedListDetail>({
     queryName: 'sharedLists.getById',
     args: listId ? { id: listId } : undefined,
@@ -79,8 +95,13 @@ export default function SharedListDetailScreen() {
     queryName: 'orderCategories.get',
     liveData: categoriesLiveResult as OrderCategory[] | undefined,
   });
+  const productsState = useCachedQueryValue<Doc<'products'>[]>({
+    queryName: 'products.get',
+    liveData: productsLiveResult as Doc<'products'>[] | undefined,
+  });
   const detail = detailState.data;
   const categories = categoriesState.data ?? [];
+  const products = productsState.data ?? [];
   const showLoader = detailState.showLoader;
   const waitingForFirstLoad = detailState.isInitialLoading && !showLoader;
 
@@ -97,11 +118,13 @@ export default function SharedListDetailScreen() {
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showConvertModal, setShowConvertModal] = React.useState(false);
   const [showCompleteModal, setShowCompleteModal] = React.useState(false);
+  const [showMembersModal, setShowMembersModal] = React.useState(false);
 
   const [name, setName] = React.useState('');
   const [quantity, setQuantity] = React.useState('1');
   const [unit, setUnit] = React.useState('unit');
   const [price, setPrice] = React.useState('0');
+  const [productSearchQuery, setProductSearchQuery] = React.useState('');
   const [inviteEmail, setInviteEmail] = React.useState('');
   const [shareTokenDays, setShareTokenDays] =
     React.useState<(typeof SHARE_TOKEN_EXPIRY_OPTIONS)[number]>(3);
@@ -113,6 +136,7 @@ export default function SharedListDetailScreen() {
     null
   );
   const [completionPrice, setCompletionPrice] = React.useState('0');
+  const [completionQuantity, setCompletionQuantity] = React.useState('1');
   const [saving, setSaving] = React.useState(false);
   const [completing, setCompleting] = React.useState(false);
 
@@ -124,6 +148,7 @@ export default function SharedListDetailScreen() {
     setQuantity('1');
     setUnit('unit');
     setPrice('0');
+    setProductSearchQuery('');
     setEditingItemId(null);
   };
 
@@ -187,6 +212,7 @@ export default function SharedListDetailScreen() {
     if (!item.completed) {
       setCompletingItemId(item._id);
       setCompletionPrice(String(item.price));
+      setCompletionQuantity(String(item.quantity));
       setShowCompleteModal(true);
       return;
     }
@@ -203,9 +229,15 @@ export default function SharedListDetailScreen() {
       return;
     }
 
-    const parsedPrice = Number(completionPrice);
-    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+    const parsedPrice = completionPrice.trim() ? Number(completionPrice) : undefined;
+    if (parsedPrice !== undefined && (!Number.isFinite(parsedPrice) || parsedPrice < 0)) {
       Alert.alert('Invalid price', 'Enter a valid non-negative price before ticking the item.');
+      return;
+    }
+
+    const parsedQuantity = completionQuantity.trim() ? Number(completionQuantity) : undefined;
+    if (parsedQuantity !== undefined && (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0)) {
+      Alert.alert('Invalid quantity', 'Enter a valid quantity greater than zero.');
       return;
     }
 
@@ -215,6 +247,7 @@ export default function SharedListDetailScreen() {
         id: completingItemId,
         completed: true,
         price: parsedPrice,
+        quantity: parsedQuantity,
       });
       setShowCompleteModal(false);
       setCompletingItemId(null);
@@ -318,7 +351,30 @@ export default function SharedListDetailScreen() {
     Alert.alert('Coming soon', 'Item restore list will be added in the next iteration.');
   };
 
+  const selectProductForAdd = (product: (typeof products)[number]) => {
+    setName(product.name);
+    setQuantity('1');
+    setUnit(product.unit);
+    setPrice(String(product.price));
+    setProductSearchQuery('');
+  };
+
+  const filteredProducts = productSearchQuery.trim()
+    ? products.filter((product) =>
+        product.name.toLowerCase().includes(productSearchQuery.trim().toLowerCase())
+      )
+    : [];
+
+  const formatAddedAt = (timestamp: number) =>
+    new Date(timestamp).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
   const activeItems = detail?.items ?? [];
+  const members = detail?.members ?? [];
   const total = activeItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const isOwner = detail?.membership.role === 'owner';
 
@@ -353,6 +409,12 @@ export default function SharedListDetailScreen() {
               </Text>
             </View>
           </View>
+          <TouchableOpacity
+            onPress={() => setShowMembersModal(true)}
+            className="border-border bg-card flex-row items-center gap-2 rounded-full border px-3 py-2">
+            <Users size={14} color={iconColor} />
+            <Text className="text-foreground text-xs font-semibold">{members.length}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -382,6 +444,11 @@ export default function SharedListDetailScreen() {
                   </Text>
                   <Text numberOfLines={2} className="text-muted-foreground mt-0.5 text-xs">
                     {item.quantity} {item.unit} · ₹{item.price.toFixed(2)} each
+                  </Text>
+                  <Text numberOfLines={1} className="text-muted-foreground mt-0.5 text-[11px]">
+                    Added by {item.created_by_name || item.created_by_email || 'Unknown user'}{' '}
+                    {' • '}
+                    {formatAddedAt(item.created_at)}
                   </Text>
                 </TouchableOpacity>
                 <View className="flex-row items-center gap-2">
@@ -484,6 +551,42 @@ export default function SharedListDetailScreen() {
             <Text className="text-foreground text-base font-semibold">
               {showEditModal ? 'Update Item' : 'Add Item'}
             </Text>
+            {!showEditModal && (
+              <>
+                <View className="border-border bg-card mt-4 rounded-xl border px-3 py-2.5">
+                  <View className="flex-row items-center gap-2">
+                    <Search size={16} color={mutedColor} />
+                    <TextInput
+                      value={productSearchQuery}
+                      onChangeText={setProductSearchQuery}
+                      placeholder="Search existing items"
+                      placeholderTextColor={mutedColor}
+                      className="text-foreground flex-1 text-sm"
+                    />
+                  </View>
+                </View>
+
+                {filteredProducts.length > 0 && (
+                  <View className="border-border bg-card mt-2 max-h-44 rounded-xl border">
+                    <ScrollView nestedScrollEnabled>
+                      {filteredProducts.slice(0, 8).map((product) => (
+                        <TouchableOpacity
+                          key={product._id}
+                          onPress={() => selectProductForAdd(product)}
+                          className="border-border border-b px-3 py-3 last:border-b-0">
+                          <Text className="text-foreground text-sm font-medium">
+                            {product.name}
+                          </Text>
+                          <Text className="text-muted-foreground text-xs">
+                            {product.category} · {product.unit} · ₹{product.price}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </>
+            )}
             <TextInput
               value={name}
               onChangeText={setName}
@@ -561,16 +664,26 @@ export default function SharedListDetailScreen() {
           <View className="border-border bg-background border-t px-5 pb-8 pt-5">
             <Text className="text-foreground text-base font-semibold">Tick Item and Set Price</Text>
             <Text className="text-muted-foreground mt-1 text-xs">
-              Confirm the price paid for this item while marking it complete.
+              Quantity and price are prefilled from the item. Edit either one if needed.
             </Text>
-            <TextInput
-              value={completionPrice}
-              onChangeText={setCompletionPrice}
-              keyboardType="decimal-pad"
-              placeholder="Price"
-              placeholderTextColor={mutedColor}
-              className="border-border bg-card text-foreground mt-4 rounded-xl border px-3 py-3"
-            />
+            <View className="mt-4 flex-row gap-2">
+              <TextInput
+                value={completionQuantity}
+                onChangeText={setCompletionQuantity}
+                keyboardType="decimal-pad"
+                placeholder="Quantity"
+                placeholderTextColor={mutedColor}
+                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+              />
+              <TextInput
+                value={completionPrice}
+                onChangeText={setCompletionPrice}
+                keyboardType="decimal-pad"
+                placeholder="Price"
+                placeholderTextColor={mutedColor}
+                className="border-border bg-card text-foreground flex-1 rounded-xl border px-3 py-3"
+              />
+            </View>
             <View className="mt-4 flex-row gap-2">
               <TouchableOpacity
                 onPress={() => {
@@ -592,6 +705,65 @@ export default function SharedListDetailScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showMembersModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMembersModal(false)}>
+        <View className="flex-1 justify-end">
+          <TouchableOpacity
+            className="flex-1 bg-black/40"
+            onPress={() => setShowMembersModal(false)}
+          />
+          <View className="border-border bg-background border-t px-5 pb-8 pt-5">
+            <Text className="text-foreground text-base font-semibold">List Members</Text>
+            <Text className="text-muted-foreground mt-1 text-xs">
+              Everyone currently in this shared list.
+            </Text>
+
+            <ScrollView className="mt-4 max-h-72">
+              <View className="gap-2">
+                {members.map((member) => (
+                  <View
+                    key={member._id}
+                    className="border-border bg-card flex-row items-center justify-between rounded-xl border px-3 py-3">
+                    <View className="mr-3 flex-1">
+                      <Text className="text-foreground text-sm font-semibold">
+                        {member.user_name || member.user_email || 'Unknown user'}
+                      </Text>
+                      <Text className="text-muted-foreground mt-0.5 text-xs">
+                        {member.user_email || 'No email available'}
+                      </Text>
+                    </View>
+                    <View
+                      style={
+                        member.role === 'owner'
+                          ? { backgroundColor: selectedCardBg, borderColor: selectedCardBorder }
+                          : undefined
+                      }
+                      className={`rounded-full border px-3 py-1.5 ${
+                        member.role === 'owner' ? 'border-primary bg-card' : 'border-border bg-card'
+                      }`}>
+                      <Text
+                        style={member.role === 'owner' ? { color: selectedLabelColor } : undefined}
+                        className="text-foreground text-xs font-semibold">
+                        {member.role === 'owner' ? 'Owner' : 'Editor'}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              onPress={() => setShowMembersModal(false)}
+              className="bg-primary mt-4 rounded-xl py-3">
+              <Text className="text-primary-foreground text-center font-semibold">Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
