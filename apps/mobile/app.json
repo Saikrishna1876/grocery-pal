@@ -19,6 +19,7 @@
     },
     "android": {
       "package": "com.saikrishna1876.grocerypal",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png",

@@ -562,7 +562,7 @@ export default function SharedListDetailScreen() {
             }}
           />
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="w-full"
           >
             <ScrollView
@@ -691,7 +691,7 @@ export default function SharedListDetailScreen() {
             }}
           />
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="w-full"
           >
             <ScrollView
@@ -829,7 +829,7 @@ export default function SharedListDetailScreen() {
             onPress={() => setShowShareModal(false)}
           />
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="w-full"
           >
             <ScrollView

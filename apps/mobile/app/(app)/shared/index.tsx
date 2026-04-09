@@ -235,7 +235,7 @@ export default function SharedListsHubScreen() {
             onPress={() => setShowCreateModal(false)}
           />
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="w-full"
           >
             <ScrollView
@@ -297,7 +297,7 @@ export default function SharedListsHubScreen() {
             onPress={() => setShowJoinModal(false)}
           />
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="w-full"
           >
             <ScrollView
