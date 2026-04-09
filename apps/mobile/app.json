@@ -20,8 +20,9 @@
     "android": {
       "package": "com.saikrishna1876.grocerypal",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#000000"
       }
     },
     "web": {
