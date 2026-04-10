@@ -1,11 +1,14 @@
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { Agent } from '@convex-dev/agent';
 import { ConvexError, v } from 'convex/values';
 
-import { internal } from './_generated/api';
+import { components, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { action } from './_generated/server';
 import { requireCurrentUser } from './auth';
 
 const scanType = v.string();
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 type CatalogProduct = {
   _id: Id<'products'>;
@@ -23,6 +26,12 @@ type ScanItem = {
   matched_product?: string | null;
   matched_product_id?: string | null;
   confidence?: string;
+};
+
+type ScanResponse = {
+  items?: ScanItem[];
+  source_type?: string;
+  notes?: string;
 };
 
 function getGeminiKey() {
@@ -45,6 +54,15 @@ function extractJson(text: string) {
   } catch {
     throw new ConvexError('Gemini returned invalid JSON.');
   }
+}
+
+function parseScanResponse(text: string): ScanResponse {
+  const parsed = extractJson(text);
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new ConvexError('Gemini returned an unexpected payload.');
+  }
+
+  return parsed as ScanResponse;
 }
 
 function buildPrompt(products: CatalogProduct[], type: string) {
@@ -104,47 +122,20 @@ If matched_product is null, set matched_product_id to null.
 Return ONLY the JSON object, nothing else.`;
 }
 
-async function callGemini(apiKey: string, prompt: string, image: string) {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: 'image/jpeg',
-                  data: image,
-                },
-              },
-            ],
-          },
-        ],
-      }),
-    },
-  );
+function createScanAgent() {
+  const google = createGoogleGenerativeAI({
+    apiKey: getGeminiKey(),
+  });
 
-  if (!response.ok) {
-    throw new ConvexError(`Gemini request failed with status ${response.status}.`);
-  }
+  return new Agent(components.agent, {
+    name: 'Grocery Scan Agent',
+    languageModel: google('gemini-2.5-flash'),
+  });
+}
 
-  const body = await response.json();
-  const text = body.candidates?.[0]?.content?.parts
-    ?.map((part: { text?: string }) => part.text ?? '')
-    .join('')
-    .trim();
-
-  if (!text) {
-    throw new ConvexError('Gemini returned an empty response.');
-  }
-
-  return text;
+function estimateBase64Bytes(base64: string) {
+  const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
 }
 
 export const processImage = action({
@@ -154,17 +145,56 @@ export const processImage = action({
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    const trimmed = args.image.replace(/^data:image\/\w+;base64,/, '').trim();
+    const imageMatch = args.image.match(/^data:(image\/[\w.+-]+);base64,(.+)$/);
+    const mediaType = imageMatch?.[1] ?? 'image/jpeg';
+    const trimmed = (imageMatch?.[2] ?? args.image).trim();
     if (!trimmed) {
       throw new ConvexError('No image provided.');
+    }
+    if (estimateBase64Bytes(trimmed) > MAX_IMAGE_SIZE_BYTES) {
+      throw new ConvexError('Image size exceeds 5 MB limit.');
     }
 
     const products = (await ctx.runQuery(internal.products.catalog, {
       userId: user._id,
     })) as CatalogProduct[];
     const prompt = buildPrompt(products, args.type);
-    const responseText = await callGemini(getGeminiKey(), prompt, trimmed);
-    const parsed = extractJson(responseText);
+    const agent = createScanAgent();
+    const { thread } = await agent.createThread(ctx, {
+      userId: String(user._id),
+      title: `scan-${args.type}`,
+    });
+    const result = await thread.generateText(
+      {
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt,
+              },
+              {
+                type: 'image',
+                image: trimmed,
+                mediaType,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        storageOptions: {
+          saveMessages: 'none',
+        },
+      },
+    );
+
+    if (!result.text) {
+      throw new ConvexError('Gemini returned an empty response.');
+    }
+
+    const parsed = parseScanResponse(result.text);
     const productsByName = new Map(
       products.map((product) => [product.name.toLowerCase(), product]),
     );

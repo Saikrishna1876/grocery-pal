@@ -8,8 +8,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.61",
     "@better-auth/expo": "1.4.21",
+    "@convex-dev/agent": "^0.6.1",
     "@convex-dev/better-auth": "0.10.13",
+    "ai": "^6.0.156",
     "better-auth": "1.4.21",
     "convex": "^1.32.0"
   },
